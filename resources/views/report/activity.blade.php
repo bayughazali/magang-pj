@@ -90,7 +90,7 @@
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <span>Daftar Report Activity ({{ count($reports) }} data)</span>
-                <a href="{{ route('reports.exportPdf') }}" class="btn btn-sm btn-dark">Export PDF</a>
+                <a href="{{ route('reports.exportPdf') }}" class=></a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">

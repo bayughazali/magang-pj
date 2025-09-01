@@ -17,6 +17,12 @@
           <a href="{{ route('export.activity.csv') }}" class="btn btn-sm btn-success">
             <i class="fas fa-file-csv"></i> Export CSV
           </a>
+<<<<<<< HEAD
+=======
+          <a href="{{ route('export.activity.excel') }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </a>
+>>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
         </div>
       </div>
     </div>
@@ -39,6 +45,7 @@
         <div class="table-responsive">
           <table class="table align-items-center table-flush table-hover">
             <thead class="thead-dark text-center">
+<<<<<<< HEAD
               <tr>
                 <th scope="col">No</th>
                 <th scope="col">Nama</th>
@@ -81,6 +88,60 @@
               </tr>
               @endforelse
             </tbody>
+=======
+  <tr>
+    <th scope="col">No</th>
+    <th scope="col">Sales</th>
+    <th scope="col">Aktivitas</th>
+    <th scope="col">Tanggal</th>
+    <th scope="col">Lokasi</th>
+    <th scope="col">Cluster</th>
+    <th scope="col">Evidence</th>
+    <th scope="col">Hasil / Kendala</th>
+    <th scope="col">Status</th>
+  </tr>
+</thead>
+<tbody class="text-center">
+  @forelse($activities as $i => $activity)
+  <tr>
+    <td>{{ $i+1 }}</td>
+    <td><strong>{{ $activity->sales }}</strong></td>
+    <td>
+      <span class="badge badge-pill badge-primary">
+        {{ $activity->aktivitas }}
+      </span>
+    </td>
+    <td>{{ \Carbon\Carbon::parse($activity->tanggal)->format('d/m/Y') }}</td>
+    <td>{{ ucfirst($activity->lokasi) }}</td>
+    <td>
+      <span class="badge badge-pill badge-info">{{ $activity->cluster }}</span>
+    </td>
+    <td>
+      @if($activity->evidence)
+      <img src="{{ asset('storage/'.$activity->evidence) }}"
+           alt="evidence"
+           class="img-thumbnail shadow-sm"
+           style="max-height:60px; border-radius:8px">
+      @else
+      <span class="text-muted">No Image</span>
+      @endif
+    </td>
+    <td>{{ $activity->hasil_kendala ?? '-' }}</td>
+    <td>
+      @if($activity->status == 'selesai')
+        <span class="badge badge-success">Selesai</span>
+      @else
+        <span class="badge badge-warning">{{ ucfirst($activity->status) }}</span>
+      @endif
+    </td>
+  </tr>
+  @empty
+  <tr>
+    <td colspan="9" class="text-center text-muted">Tidak ada data activity</td>
+  </tr>
+  @endforelse
+</tbody>
+>>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
           </table>
         </div>
 

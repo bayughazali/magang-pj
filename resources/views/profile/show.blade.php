@@ -172,7 +172,8 @@
                                         </div>
                                     </div>
                                 </div>
-<!-- Profile Info Panel -->
+
+                              <!-- Profile Info Panel -->
 <div class="col-lg-4">
     <div class="card shadow-lg border-0">
         <div class="card-header bg-white border-0">

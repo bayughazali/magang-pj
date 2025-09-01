@@ -11,6 +11,7 @@
         "elibyy/tcpdf-laravel": "^11.5",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "maatwebsite/excel": "^3.1",
         "realrashid/sweet-alert": "^7.3"
     },
     "require-dev": {

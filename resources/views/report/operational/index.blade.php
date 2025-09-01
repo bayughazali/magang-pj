@@ -37,14 +37,16 @@
                         <label class="form-label">Nama Pelanggan *</label>
                         <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan') }}" required>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Bandwidth *</label>
-                        <select name="bandwidth" class="form-control" required>
-                            <option value="">-- Pilih Kecepatan --</option>
-                            <option value="10 Mbps" {{ old('bandwidth') == '10 Mbps' ? 'selected' : '' }}>10 Mbps</option>
-                            <option value="20 Mbps" {{ old('bandwidth') == '20 Mbps' ? 'selected' : '' }}>20 Mbps</option>
-                            <option value="50 Mbps" {{ old('bandwidth') == '50 Mbps' ? 'selected' : '' }}>50 Mbps</option>
-                            <option value="100 Mbps" {{ old('bandwidth') == '100 Mbps' ? 'selected' : '' }}>100 Mbps</option>
+                   <div class="col-md-4">
+                        <label class="form-label"><strong>Pilih Bandwidth</strong></label>
+                        <select class="form-control select2" id="bandwidthSelect" name="bandwidth" required>
+                            <option value="">-- Pilih Bandwidth --</option>
+                            @php
+                                $bandwidths = \App\Models\Competitor::select('kecepatan')->distinct()->pluck('kecepatan');
+                            @endphp
+                            @foreach($bandwidths as $bw)
+                                <option value="{{ $bw }}">{{ $bw }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -85,23 +87,37 @@
                         <small class="text-muted">Kode FAT akan muncul setelah memilih provinsi dan kabupaten</small>
                     </div>
 
-
                     <div class="col-md-6">
                         <label class="form-label">Alamat *</label>
                         <textarea name="alamat" rows="2" class="form-control" required>{{ old('alamat') }}</textarea>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Cluster *</label>
-                        <select name="cluster" class="form-control" required>
-                            <option value="">-- Pilih Cluster --</option>
-                            <option value="Cluster A" {{ old('cluster') == 'Cluster A' ? 'selected' : '' }}>Cluster A</option>
-                            <option value="Cluster B" {{ old('cluster') == 'Cluster B' ? 'selected' : '' }}>Cluster B</option>
-                            <option value="Cluster C" {{ old('cluster') == 'Cluster C' ? 'selected' : '' }}>Cluster C</option>
-                            <option value="Cluster D" {{ old('cluster') == 'Cluster D' ? 'selected' : '' }}>Cluster D</option>
-                        </select>
-                    </div>
+                   <div class="col-md-4">
+                        <label class="form-label"><strong>Pilih Cluster</strong></label>
+                        <select class="form-control select2" name="cluster" id="clusterSelect" required>
+                        <option value="">-- Pilih Cluster --</option>
+                        {{-- 🔹 PERBAIKAN: Ambil cluster dari ReportActivity yang sudah ada data --}}
+                        @php
+                            $availableClusters = \App\Models\ReportActivity::select('cluster')
+                                ->distinct()
+                                ->orderBy('cluster')
+                                ->pluck('cluster');
+                        @endphp
 
+                        @forelse($availableClusters as $cluster)
+                            <option value="{{ $cluster }}">Cluster {{ $cluster }}</option>
+                        @empty
+                            <option disabled>Belum ada data Report Activity</option>
+                        @endforelse
+                        </select>
+
+                        @if($availableClusters->isEmpty())
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Cluster akan muncul setelah ada data Report Activity
+                        </small>
+                        @endif
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label">Latitude</label>
                         <input type="text" id="latitude" name="latitude" class="form-control" placeholder="-8.409518" value="{{ old('latitude', '-8.409518') }}" readonly>
@@ -110,7 +126,7 @@
                         <label class="form-label">Longitude</label>
                         <input type="text" id="longitude" name="longitude" class="form-control" placeholder="115.188916" value="{{ old('longitude', '115.188916') }}" readonly>
                     </div>
-                    <div class="col-12">
+                    <div class="col-12 mt-3">
                         <button type="submit" class="btn btn-success">
                             <i class="fas fa-save"></i> Simpan Data
                         </button>
@@ -622,6 +638,108 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+    const clusterInput  = document.getElementById("clusterInput");
+    const clusterReport = document.getElementById("clusterReport");
+
+    // Jika pilih di form input -> report ikut berubah
+    clusterInput.addEventListener("change", function() {
+        clusterReport.value = this.value;
+    });
+
+    // Jika pilih di report -> form input ikut berubah
+    clusterReport.addEventListener("change", function() {
+        clusterInput.value = this.value;
+    });
+});
+
 </script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const clusterInput  = document.getElementById("clusterInput");   // dari Form Input Pelanggan
+    const clusterReport = document.getElementById("clusterSelect"); // dari Report Competitor
+
+    if (clusterInput && clusterReport) {
+      // 🔹 Kalau pilih cluster di Form Input Pelanggan -> update Report Competitor
+      clusterInput.addEventListener("change", function() {
+        clusterReport.value = this.value;
+        $('#clusterSelect').trigger('change'); // biar select2 ikut update
+      });
+
+      // 🔹 Kalau pilih cluster di Report Competitor -> update Form Input Pelanggan
+      clusterReport.addEventListener("change", function() {
+        clusterInput.value = this.value;
+      });
+    }
+  });
+
+  document.querySelector('select[name="bandwidth"]').addEventListener('change', function() {
+    let bandwidth = this.value;
+
+    fetch(`/api/kecepatan-by-bandwidth?bandwidth=${bandwidth}`)
+        .then(res => res.json())
+        .then(data => {
+            let kecepatanSelect = document.querySelector('select[name="kecepatan[]"]');
+            kecepatanSelect.innerHTML = '<option value="">-- Pilih Kecepatan --</option>';
+
+            data.kecepatan.forEach(function(item) {
+                let option = document.createElement('option');
+                option.value = item;
+                option.text = item;
+                kecepatanSelect.appendChild(option);
+            });
+
+            // auto select sama dengan bandwidth pelanggan
+            if (data.bandwidth) {
+                kecepatanSelect.value = data.bandwidth;
+            }
+        });
+});
+
+</script>
+<script>
+$(document).ready(function() {
+    $('#bandwidthSelect').on('change', function() {
+        var bandwidth = $(this).val();
+
+        // Kosongkan dropdown kecepatan dulu
+        $('#kecepatanSelect').empty().append('<option value="">-- Pilih Kecepatan --</option>');
+
+        if (bandwidth) {
+            $.ajax({
+                url: "{{ route('get.kecepatan') }}",
+                type: "GET",
+                data: { bandwidth: bandwidth },
+                success: function(data) {
+                    $.each(data, function(index, value) {
+                        $('#kecepatanSelect').append('<option value="'+ value +'">'+ value +'</option>');
+                    });
+                }
+            });
+        }
+    });
+});
+</script>
+$('#paketSelect').on('change', function() {
+    var paket = $(this).val();
+
+    if (paket) {
+        $.ajax({
+            url: '/get-kecepatan',
+            type: 'GET',
+            data: { paket: paket },
+            success: function(data) {
+                $('#kecepatanSelect').empty().append('<option value="">-- Pilih Kecepatan --</option>');
+                $.each(data, function(index, value) {
+                    $('#kecepatanSelect').append('<option value="'+ value +'">'+ value +'</option>');
+                });
+            }
+        });
+    } else {
+        $('#kecepatanSelect').empty().append('<option value="">-- Pilih Kecepatan --</option>');
+    }
+});
 
 @endsection

@@ -1,4 +1,9 @@
 No,Sales,Aktivitas,Tanggal,Lokasi,Cluster,Hasil,Status
+<<<<<<< HEAD
 1,rengga,magang,2025-08-26,surabaya,A,,Selesai
 2,rengga,magang,2025-08-26,surabaya,B,,Selesai
 3,ADIS,magang,2025-08-29,surabaya,C,,Selesai
+=======
+1,Adis,Iconnet,2025-08-28,Jember,C,,Proses
+2,Subag,Polije,2025-08-31,Bondowoso,B,,Selesai
+>>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184

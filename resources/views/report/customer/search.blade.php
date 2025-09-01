@@ -50,7 +50,7 @@
                             <i class="fas fa-filter me-2"></i>Filter Pencarian
                         </h6>
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary active" onclick="showBasicSearch()">
+                            <button type="button" class="btn btn-outline-primary" onclick="showBasicSearch()">
                                 <i class="fas fa-search me-1"></i>Basic
                             </button>
                             <button type="button" class="btn btn-outline-info" onclick="showAdvancedSearch()">
@@ -300,8 +300,8 @@
                                             <a href="{{ route('customer.edit', $pelanggan->id) }}" class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-danger" 
-                                                    onclick="deletePelanggan({{ $pelanggan->id }}, '{{ addslashes($pelanggan->nama_pelanggan) }}')" 
+                                            <button type="button" class="btn btn-outline-danger"
+                                                    onclick="deletePelanggan({{ $pelanggan->id }}, '{{ addslashes($pelanggan->nama_pelanggan) }}')"
                                                     title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -391,25 +391,9 @@
 <script>
 // Global variables
 let currentDeleteId = null;
-let deleteModal = null;
-
-// PERBAIKAN: Definisikan variabel pagination dari PHP ke JavaScript dengan pengecekan
-const paginationData = {
-    currentPage: {{ isset($pelanggans) ? $pelanggans->currentPage() : 1 }},
-    perPage: {{ isset($pelanggans) ? $pelanggans->perPage() : 10 }},
-    baseUrl: '{{ url('/') }}'
-};
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded');
-    
-    // Initialize modal
-    const deleteModalEl = document.getElementById('deleteModal');
-    if (deleteModalEl) {
-        deleteModal = new bootstrap.Modal(deleteModalEl);
-    }
-    
     // Auto focus search input
     const searchInput = document.getElementById('filter_query');
     if (searchInput && !searchInput.value) {
@@ -417,21 +401,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Pastikan ada CSRF token di meta tag
-    let csrfToken = document.querySelector('meta[name="csrf-token"]');
-    if (!csrfToken) {
+    if (!document.querySelector('meta[name="csrf-token"]')) {
         const metaTag = document.createElement('meta');
         metaTag.name = 'csrf-token';
         metaTag.content = '{{ csrf_token() }}';
         document.head.appendChild(metaTag);
     }
-    
+
     // Setup delete confirmation modal
     const confirmDeleteBtn = document.getElementById('confirmDelete');
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', function() {
             if (currentDeleteId) {
-                console.log('Confirm delete clicked for ID:', currentDeleteId);
                 performDelete(currentDeleteId);
+                // Close modal
+                const deleteModalEl = document.getElementById('deleteModal');
+                const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
+                if (deleteModal) {
+                    deleteModal.hide();
+                }
             }
         });
     }
@@ -457,19 +445,16 @@ function showAdvancedSearch() {
     event.target.classList.add('active');
 }
 
-function showDeleteModal(id, nama) {
-    console.log('Showing delete modal for:', id, nama);
+function deletePelanggan(id, nama) {
     currentDeleteId = id;
     document.getElementById('customerName').textContent = nama;
-    
+
     // Show modal
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
     deleteModal.show();
 }
 
 function performDelete(id) {
-    console.log('Performing delete for ID:', id);
-    
     // Show loading state
     const deleteBtn = document.getElementById('confirmDelete');
     const originalText = deleteBtn.innerHTML;
@@ -483,10 +468,15 @@ function performDelete(id) {
         resetDeleteButton(deleteBtn, originalText);
         return;
     }
-    
-    // PERBAIKAN: Gunakan URL yang sesuai dengan route yang ada di controller
+
+<<<<<<< HEAD
+    // PERBAIKAN: Gunakan route Laravel yang benar
+    const deleteUrl = `/customer/${id}`;
+=======
+    // PERBAIKAN: URL yang benar sesuai dengan route Laravel
     const deleteUrl = `/customer/search/${id}`;
-    
+>>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
+
     // Kirim request delete via fetch
     fetch(deleteUrl, {
         method: 'DELETE',
@@ -499,9 +489,18 @@ function performDelete(id) {
     })
     .then(response => {
         console.log('Response status:', response.status);
-        
+
+<<<<<<< HEAD
+        // Cek jika response tidak ok
+=======
+>>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Coba parse error message dari response
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            }).catch(() => {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            });
         }
         return response.json();
     })
@@ -510,29 +509,21 @@ function performDelete(id) {
 
         if (data.success) {
             showAlert(data.message || 'Data pelanggan berhasil dihapus!', 'success');
-            
-            // Remove row from table
+            // Remove row from table instead of full reload for better UX
             const row = document.getElementById('row-' + id);
             if (row) {
-                // Add fade out animation
-                row.style.transition = 'opacity 0.3s ease-out';
+                // Animate row removal
+                row.style.transition = 'opacity 0.3s ease';
                 row.style.opacity = '0';
-                
                 setTimeout(() => {
                     row.remove();
                     updateRowNumbers();
                     updateTotalCount();
                 }, 300);
             }
-            
-            // Hide modal
-            if (deleteModal) {
-                deleteModal.hide();
-            }
         } else {
             throw new Error(data.message || 'Gagal menghapus data');
         }
-        
         resetDeleteButton(deleteBtn, originalText);
         currentDeleteId = null;
     })
@@ -553,8 +544,13 @@ function updateRowNumbers() {
     rows.forEach((row, index) => {
         const firstCell = row.querySelector('td');
         if (firstCell) {
+            @if(isset($pelanggans))
             const currentPage = {{ $pelanggans->currentPage() ?? 1 }};
-            const perPage = {{ $pelanggans->perPage() ?? 10 }};
+            const perPage = {{ $pelanggans->perPage() ?? 15 }};
+            @else
+            const currentPage = 1;
+            const perPage = 15;
+            @endif
             const newNumber = ((currentPage - 1) * perPage) + index + 1;
             firstCell.textContent = newNumber;
         }
@@ -563,26 +559,24 @@ function updateRowNumbers() {
 
 function updateTotalCount() {
     const remainingRows = document.querySelectorAll('tbody tr').length;
-    
-    // Update badge total
     const totalBadge = document.querySelector('.badge.bg-primary');
     if (totalBadge) {
-        const currentTotal = Math.max(0, parseInt(totalBadge.textContent) - 1);
+        const currentTotal = parseInt(totalBadge.textContent) - 1;
         totalBadge.textContent = currentTotal;
     }
 
     // Update header total
     const headerTotal = document.querySelector('.text-end h5');
     if (headerTotal) {
-        const currentHeaderTotal = Math.max(0, parseInt(headerTotal.textContent) - 1);
+        const currentHeaderTotal = parseInt(headerTotal.textContent) - 1;
         headerTotal.textContent = currentHeaderTotal;
     }
-    
+
     // If no more rows, show empty state
     if (remainingRows === 0) {
         setTimeout(() => {
             window.location.reload();
-        }, 1500);
+        }, 1000);
     }
 }
 
@@ -590,7 +584,7 @@ function showAlert(message, type = 'success') {
     // Remove existing alerts
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => alert.remove());
-    
+
     // Create new alert
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
@@ -606,10 +600,10 @@ function showAlert(message, type = 'success') {
     const headerSection = document.querySelector('.container-fluid .row.mb-4');
     if (headerSection) {
         headerSection.insertAdjacentHTML('afterend', alertHtml);
-        
+
         // Auto dismiss after 5 seconds
         setTimeout(() => {
-            const alert = document.querySelector(`.alert.${alertClass}`);
+            const alert = document.querySelector(.alert.${alertClass});
             if (alert) {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
@@ -617,7 +611,7 @@ function showAlert(message, type = 'success') {
         }, 5000);
 
         // Scroll to alert
-        const alert = document.querySelector(`.alert.${alertClass}`);
+        const alert = document.querySelector(.alert.${alertClass});
         if (alert) {
             alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -631,20 +625,20 @@ function viewLocation(lat, lng, nama) {
     }
 
     // Buka Google Maps di tab baru
-    const url = `https://www.google.com/maps?q=${lat},${lng}&z=15&t=m&hl=id`;
+    const url = https://www.google.com/maps?q=${lat},${lng}&z=15&t=m&hl=id;
     const mapWindow = window.open(url, '_blank');
 
     // Cek jika popup diblokir browser
     if (!mapWindow || mapWindow.closed || typeof mapWindow.closed == 'undefined') {
-        const coordText = `${lat}, ${lng}`;
+        const coordText = ${lat}, ${lng};
         if (navigator.clipboard) {
             navigator.clipboard.writeText(coordText).then(() => {
-                showAlert(`Popup diblokir! Koordinat ${coordText} telah disalin ke clipboard. Paste di Google Maps secara manual.`, 'error');
+                showAlert(Popup diblokir! Koordinat ${coordText} telah disalin ke clipboard. Paste di Google Maps secara manual., 'error');
             }).catch(() => {
-                showAlert(`Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps.`, 'error');
+                showAlert(Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps., 'error');
             });
         } else {
-            showAlert(`Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps.`, 'error');
+            showAlert(Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps., 'error');
         }
     }
 }
