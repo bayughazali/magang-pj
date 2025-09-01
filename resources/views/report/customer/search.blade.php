@@ -50,7 +50,7 @@
                             <i class="fas fa-filter me-2"></i>Filter Pencarian
                         </h6>
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary" onclick="showBasicSearch()">
+                            <button type="button" class="btn btn-outline-primary active" onclick="showBasicSearch()">
                                 <i class="fas fa-search me-1"></i>Basic
                             </button>
                             <button type="button" class="btn btn-outline-info" onclick="showAdvancedSearch()">
@@ -115,7 +115,7 @@
                                     <label class="form-label fw-semibold">Cluster</label>
                                     <select class="form-select" name="cluster_filter">
                                         <option value="">Semua Cluster</option>
-                                        @if(isset($pelanggans))
+                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
                                             @foreach($pelanggans->pluck('cluster')->unique()->sort() as $cluster)
                                                 <option value="{{ $cluster }}">{{ $cluster }}</option>
                                             @endforeach
@@ -126,7 +126,7 @@
                                     <label class="form-label fw-semibold">Provinsi</label>
                                     <select class="form-select" name="provinsi_filter">
                                         <option value="">Semua Provinsi</option>
-                                        @if(isset($pelanggans))
+                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
                                             @foreach($pelanggans->pluck('provinsi')->unique()->sort() as $provinsi)
                                                 <option value="{{ $provinsi }}">{{ $provinsi }}</option>
                                             @endforeach
@@ -137,7 +137,7 @@
                                     <label class="form-label fw-semibold">Kabupaten</label>
                                     <select class="form-select" name="kabupaten_filter">
                                         <option value="">Semua Kabupaten</option>
-                                        @if(isset($pelanggans))
+                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
                                             @foreach($pelanggans->pluck('kabupaten')->unique()->sort() as $kabupaten)
                                                 <option value="{{ $kabupaten }}">{{ $kabupaten }}</option>
                                             @endforeach
@@ -294,8 +294,9 @@
                                             <a href="{{ route('customer.edit', $pelanggan->id) }}" class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-danger" 
-                                                    onclick="deletePelanggan({{ $pelanggan->id }}, '{{ addslashes($pelanggan->nama_pelanggan) }}')" 
+                                            <button type="button" class="btn btn-outline-danger delete-btn" 
+                                                    data-id="{{ $pelanggan->id }}" 
+                                                    data-nama="{{ $pelanggan->nama_pelanggan }}" 
                                                     title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -385,9 +386,25 @@
 <script>
 // Global variables
 let currentDeleteId = null;
+let deleteModal = null;
+
+// PERBAIKAN: Definisikan variabel pagination dari PHP ke JavaScript dengan pengecekan
+const paginationData = {
+    currentPage: {{ isset($pelanggans) ? $pelanggans->currentPage() : 1 }},
+    perPage: {{ isset($pelanggans) ? $pelanggans->perPage() : 10 }},
+    baseUrl: '{{ url('/') }}'
+};
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    
+    // Initialize modal
+    const deleteModalEl = document.getElementById('deleteModal');
+    if (deleteModalEl) {
+        deleteModal = new bootstrap.Modal(deleteModalEl);
+    }
+    
     // Auto focus search input
     const searchInput = document.getElementById('filter_query');
     if (searchInput && !searchInput.value) {
@@ -395,25 +412,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Pastikan ada CSRF token di meta tag
-    if (!document.querySelector('meta[name="csrf-token"]')) {
+    let csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
         const metaTag = document.createElement('meta');
         metaTag.name = 'csrf-token';
         metaTag.content = '{{ csrf_token() }}';
         document.head.appendChild(metaTag);
     }
     
-    // Setup delete confirmation modal
+    // PERBAIKAN: Setup event listener untuk tombol delete dengan event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.delete-btn');
+            const id = btn.getAttribute('data-id');
+            const nama = btn.getAttribute('data-nama');
+            
+            if (id && nama) {
+                console.log('Delete button clicked:', id, nama);
+                showDeleteModal(id, nama);
+            }
+        }
+    });
+    
+    // Setup confirm delete button
     const confirmDeleteBtn = document.getElementById('confirmDelete');
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', function() {
             if (currentDeleteId) {
+                console.log('Confirm delete clicked for ID:', currentDeleteId);
                 performDelete(currentDeleteId);
-                // Close modal
-                const deleteModalEl = document.getElementById('deleteModal');
-                const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
-                if (deleteModal) {
-                    deleteModal.hide();
-                }
             }
         });
     }
@@ -439,16 +467,19 @@ function showAdvancedSearch() {
     event.target.classList.add('active');
 }
 
-function deletePelanggan(id, nama) {
+function showDeleteModal(id, nama) {
+    console.log('Showing delete modal for:', id, nama);
     currentDeleteId = id;
     document.getElementById('customerName').textContent = nama;
     
-    // Show modal
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    deleteModal.show();
+    if (deleteModal) {
+        deleteModal.show();
+    }
 }
 
 function performDelete(id) {
+    console.log('Performing delete for ID:', id);
+    
     // Show loading state
     const deleteBtn = document.getElementById('confirmDelete');
     const originalText = deleteBtn.innerHTML;
@@ -463,8 +494,9 @@ function performDelete(id) {
         return;
     }
     
-    // PERBAIKAN: Gunakan URL yang sesuai dengan route yang ada di controller
-    const deleteUrl = `/customer/search/${id}`;
+    // PERBAIKAN: Gunakan URL yang benar dengan base URL
+    const deleteUrl = `${paginationData.baseUrl}/customer/search/${id}`;
+    console.log('Delete URL:', deleteUrl);
     
     // Kirim request delete via fetch
     fetch(deleteUrl, {
@@ -478,27 +510,46 @@ function performDelete(id) {
     })
     .then(response => {
         console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Handle different response types
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                throw new Error(`Unexpected response format: ${text}`);
+            });
         }
-        return response.json();
     })
     .then(data => {
         console.log('Delete response:', data);
         
         if (data.success) {
             showAlert(data.message || 'Data pelanggan berhasil dihapus!', 'success');
-            // Remove row from table instead of full reload for better UX
+            
+            // Remove row from table
             const row = document.getElementById('row-' + id);
             if (row) {
-                row.remove();
-                updateRowNumbers();
-                updateTotalCount();
+                // Add fade out animation
+                row.style.transition = 'opacity 0.3s ease-out';
+                row.style.opacity = '0';
+                
+                setTimeout(() => {
+                    row.remove();
+                    updateRowNumbers();
+                    updateTotalCount();
+                }, 300);
+            }
+            
+            // Hide modal
+            if (deleteModal) {
+                deleteModal.hide();
             }
         } else {
             throw new Error(data.message || 'Gagal menghapus data');
         }
+        
         resetDeleteButton(deleteBtn, originalText);
         currentDeleteId = null;
     })
@@ -519,9 +570,7 @@ function updateRowNumbers() {
     rows.forEach((row, index) => {
         const firstCell = row.querySelector('td');
         if (firstCell) {
-            const currentPage = {{ $pelanggans->currentPage() ?? 1 }};
-            const perPage = {{ $pelanggans->perPage() ?? 10 }};
-            const newNumber = ((currentPage - 1) * perPage) + index + 1;
+            const newNumber = ((paginationData.currentPage - 1) * paginationData.perPage) + index + 1;
             firstCell.textContent = newNumber;
         }
     });
@@ -529,31 +578,49 @@ function updateRowNumbers() {
 
 function updateTotalCount() {
     const remainingRows = document.querySelectorAll('tbody tr').length;
+    
+    // Update badge total
     const totalBadge = document.querySelector('.badge.bg-primary');
     if (totalBadge) {
-        const currentTotal = parseInt(totalBadge.textContent) - 1;
+        const currentTotal = Math.max(0, parseInt(totalBadge.textContent) - 1);
         totalBadge.textContent = currentTotal;
     }
     
     // Update header total
     const headerTotal = document.querySelector('.text-end h5');
     if (headerTotal) {
-        const currentHeaderTotal = parseInt(headerTotal.textContent) - 1;
+        const currentHeaderTotal = Math.max(0, parseInt(headerTotal.textContent) - 1);
         headerTotal.textContent = currentHeaderTotal;
     }
     
-    // If no more rows, show empty state
+    // Update pagination info
+    const paginationInfo = document.querySelector('.text-muted');
+    if (paginationInfo && remainingRows > 0) {
+        const currentInfo = paginationInfo.textContent;
+        const match = currentInfo.match(/(\d+)-(\d+) dari (\d+)/);
+        if (match) {
+            const newTotal = Math.max(0, parseInt(match[3]) - 1);
+            const newEnd = Math.min(parseInt(match[2]), newTotal);
+            paginationInfo.textContent = `Menampilkan ${match[1]}-${newEnd} dari ${newTotal} data`;
+        }
+    }
+    
+    // If no more rows, show empty state or reload
     if (remainingRows === 0) {
         setTimeout(() => {
             window.location.reload();
-        }, 1000);
+        }, 1500);
     }
 }
 
 function showAlert(message, type = 'success') {
     // Remove existing alerts
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
+    const existingAlerts = document.querySelectorAll('.alert:not(.alert-warning)');
+    existingAlerts.forEach(alert => {
+        if (!alert.id || alert.id !== 'customerName') {
+            alert.remove();
+        }
+    });
     
     // Create new alert
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
@@ -567,9 +634,10 @@ function showAlert(message, type = 'success') {
     `;
     
     // Insert after header section
-    const headerSection = document.querySelector('.container-fluid .row.mb-4');
-    if (headerSection) {
-        headerSection.insertAdjacentHTML('afterend', alertHtml);
+    const container = document.querySelector('.container-fluid');
+    const firstCard = container.querySelector('.card');
+    if (firstCard) {
+        firstCard.insertAdjacentHTML('afterend', alertHtml);
         
         // Auto dismiss after 5 seconds
         setTimeout(() => {

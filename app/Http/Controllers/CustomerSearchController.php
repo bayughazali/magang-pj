@@ -5,9 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Pelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CustomerSearchController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Tampilkan halaman pencarian pelanggan & kode FAT
      */
@@ -88,6 +94,13 @@ class CustomerSearchController extends Controller
 
         // Order by latest dan paginate
         $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // PERBAIKAN: Pastikan variabel selalu ada walaupun kosong
+        if (!isset($pelanggans)) {
+            $pelanggans = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect(), 0, 15, 1, ['path' => $request->url()]
+            );
+        }
 
         return view('report.customer.search', compact('pelanggans', 'filterField', 'filterQuery'));
     }
@@ -173,20 +186,39 @@ class CustomerSearchController extends Controller
     }
 
     /**
-     * Hapus data pelanggan dari halaman pencarian
-     * FIXED: Method destroy yang akan dipanggil oleh JavaScript
+     * PERBAIKAN: Method destroy yang akan dipanggil oleh JavaScript
+     * Pastikan method ini dapat diakses dengan benar
      */
     public function destroy($id)
     {
         try {
-            \Log::info('Delete request received for ID: ' . $id);
+            Log::info('Delete request received for customer ID: ' . $id);
             
-            $pelanggan = Pelanggan::findOrFail($id);
-            $nama = $pelanggan->nama_pelanggan;
+            // Validasi ID
+            if (!is_numeric($id)) {
+                Log::error('Invalid customer ID provided: ' . $id);
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'ID pelanggan tidak valid.'
+                ], 400);
+            }
+            
+            // Cari pelanggan
+            $pelanggan = Pelanggan::find($id);
+            if (!$pelanggan) {
+                Log::error('Customer not found with ID: ' . $id);
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Data pelanggan tidak ditemukan.'
+                ], 404);
+            }
 
+            $nama = $pelanggan->nama_pelanggan;
+            
+            // Hapus data pelanggan
             $pelanggan->delete();
             
-            \Log::info('Customer deleted successfully: ' . $nama);
+            Log::info('Customer deleted successfully: ' . $nama . ' (ID: ' . $id . ')');
 
             // Return JSON response untuk AJAX request
             return response()->json([
@@ -194,15 +226,10 @@ class CustomerSearchController extends Controller
                 'message' => "Data pelanggan {$nama} berhasil dihapus!"
             ], 200);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('Customer not found: ' . $id);
-            return response()->json([
-                'success' => false, 
-                'message' => 'Data pelanggan tidak ditemukan.'
-            ], 404);
-            
         } catch (\Exception $e) {
-            \Log::error('Error deleting customer: ' . $e->getMessage());
+            Log::error('Error deleting customer ID ' . $id . ': ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
             return response()->json([
                 'success' => false, 
                 'message' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()
@@ -388,10 +415,5 @@ class CustomerSearchController extends Controller
         ];
 
         return response()->json($stats);
-    }
-
-    public function __construct()
-    {
-        $this->middleware('auth');
     }
 }

@@ -59,76 +59,102 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(User $user)
     {
-        $user = User::findOrFail($id);
         return view('users.show', compact('user'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(User $user)
     {
-        $user = User::findOrFail($id);
+        // Laravel Route Model Binding otomatis inject User model berdasarkan ID
+        // Pastikan parameter di route adalah {user}, bukan {id}
         return view('users.edit', compact('user'));
     }
 
     /**
      * Update the specified resource in storage.
+     * PERBAIKAN: Hapus kemampuan update password dan role terbatas untuk admin saja
      */
-   /**
- * Update the specified resource in storage.
- */
-public function update(Request $request, $id)
-{
-    $user = User::findOrFail($id);
-    
-    // Buat aturan validasi yang dinamis
-    $rules = [
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-        'role' => 'required|in:admin,user',
-    ];
-    
-    // Tambahkan validasi password hanya jika field diisi
-    if ($request->filled('password')) {
-        $rules['password'] = 'string|min:8|confirmed';
-    }
-    
-    $validator = Validator::make($request->all(), $rules);
-
-    if ($validator->fails()) {
-        return redirect()->back()
-            ->withErrors($validator)
-            ->withInput();
-    }
-
-    // Data yang akan diupdate
-    $updateData = [
-        'name' => $request->name,
-        'email' => $request->email,
-        'role' => $request->role,
-    ];
-    
-    // Tambahkan password ke data update hanya jika diisi
-    if ($request->filled('password')) {
-        $updateData['password'] = Hash::make($request->password);
-    }
-
-    $user->update($updateData);
-
-    return redirect()->route('users.index')
-        ->with('success', 'User berhasil diupdate!');
-}
-
-
-    public function destroy($id)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
+        // Cek apakah user yang login adalah admin
+        $isAdmin = auth()->user()->role === 'admin';
+        
+        // Validasi dasar
+        $rules = [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+        ];
+        
+        // Tambahkan validasi role hanya jika user adalah admin
+        if ($isAdmin) {
+            $rules['role'] = 'required|in:admin,user';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Data yang akan diupdate
+        $updateData = [
+            'name' => $request->name,
+            'email' => $request->email,
+        ];
+        
+        // Tambahkan role ke data update hanya jika user adalah admin
+        if ($isAdmin && $request->has('role')) {
+            $updateData['role'] = $request->role;
+        }
+
+        $user->update($updateData);
+
+        return redirect()->route('users.index')
+            ->with('success', 'User berhasil diupdate!');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(User $user)
+    {
+        // Cegah user menghapus dirinya sendiri
+        if ($user->id === auth()->id()) {
+            return redirect()->route('users.index')
+                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri!');
+        }
+
         $user->delete();
         
         return redirect()->route('users.index')
             ->with('success', 'User berhasil dihapus!');
+    }
+
+    /**
+     * Method khusus untuk reset password (opsional - jika diperlukan)
+     * Hanya admin yang bisa reset password user lain
+     */
+    public function resetPassword(User $user)
+    {
+        // Pastikan hanya admin yang bisa reset password
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Generate password sementara
+        $temporaryPassword = 'temp' . rand(1000, 9999);
+        
+        $user->update([
+            'password' => Hash::make($temporaryPassword),
+        ]);
+
+        return redirect()->route('users.index')
+            ->with('success', "Password user {$user->name} berhasil direset. Password sementara: {$temporaryPassword}");
     }
 }
