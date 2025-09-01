@@ -442,6 +442,27 @@
 
 <script>
 
+    document.addEventListener("DOMContentLoaded", function() {
+    const provinsiSelect = document.getElementById("provinsi");
+    const kabupatenSelect = document.getElementById("kabupaten");
+
+    const regionData = @json($regionData); // passing dari controller ke blade
+
+    provinsiSelect.addEventListener("change", function() {
+        const provinsi = this.value;
+        kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
+
+        if (regionData[provinsi]) {
+            regionData[provinsi].forEach(kab => {
+                const option = document.createElement("option");
+                option.value = kab;
+                option.textContent = kab;
+                kabupatenSelect.appendChild(option);
+            });
+        }
+    });
+});
+
 // ====== DOM Elements ======
 const provinsiSelect = document.getElementById('provinsi');
 const kabupatenSelect = document.getElementById('kabupaten');
@@ -567,61 +588,5 @@ kabupatenSelect.addEventListener('change', () => focusRegion(kabupatenSelect.val
 
 </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const provinsiSelect = document.getElementById("provinsi");
-    const kabupatenSelect = document.getElementById("kabupaten");
-    const kodeFatInput   = document.getElementById("kode_fat");
-
-    // Reset input kode FAT
-    function resetKodeFat() {
-        kodeFatInput.value = "Akan terisi otomatis...";
-    }
-
-    provinsiSelect.addEventListener("change", function() {
-        const provinsi = this.value;
-        kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        resetKodeFat();
-
-        if (provinsi) {
-            fetch(`/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        data.kabupaten.forEach(kab => {
-                            const option = document.createElement("option");
-                            option.value = kab;
-                            option.textContent = kab;
-                            kabupatenSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error("AJAX Error:", error));
-        }
-    });
-
-    kabupatenSelect.addEventListener("change", function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = this.value;
-        resetKodeFat();
-
-        if (provinsi && kabupaten) {
-            fetch(`/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        kodeFatInput.value = data.kode_fat;
-                    } else {
-                        kodeFatInput.value = "Tidak ditemukan";
-                    }
-                })
-                .catch(error => {
-                    kodeFatInput.value = "Error mengambil data";
-                    console.error("AJAX Error:", error);
-                });
-        }
-    });
-});
-</script>
 
 @endsection

@@ -442,6 +442,27 @@
 
 <script>
 
+    document.addEventListener("DOMContentLoaded", function() {
+    const provinsiSelect = document.getElementById("provinsi");
+    const kabupatenSelect = document.getElementById("kabupaten");
+
+    const regionData = @json($regionData); // passing dari controller ke blade
+
+    provinsiSelect.addEventListener("change", function() {
+        const provinsi = this.value;
+        kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
+
+        if (regionData[provinsi]) {
+            regionData[provinsi].forEach(kab => {
+                const option = document.createElement("option");
+                option.value = kab;
+                option.textContent = kab;
+                kabupatenSelect.appendChild(option);
+            });
+        }
+    });
+});
+
 // ====== DOM Elements ======
 const provinsiSelect = document.getElementById('provinsi');
 const kabupatenSelect = document.getElementById('kabupaten');
@@ -623,5 +644,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
+
 
 @endsection

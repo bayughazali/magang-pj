@@ -9,11 +9,6 @@ use Illuminate\Support\Facades\Log;
 
 class CustomerSearchController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Tampilkan halaman pencarian pelanggan & kode FAT
      */
@@ -98,8 +93,8 @@ class CustomerSearchController extends Controller
                 });
             }
 
-        // Order by latest dan paginate
-        $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
+            // PERBAIKAN: Selalu ambil data dengan pagination, meskipun tanpa filter
+            $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
 
             // Pastikan $pelanggans tidak null
             if (!$pelanggans) {
@@ -211,19 +206,17 @@ class CustomerSearchController extends Controller
 
     /**
      * Hapus data pelanggan dari halaman pencarian
-     * FIXED: Method destroy yang akan dipanggil oleh JavaScript
      */
     public function destroy($id)
     {
         try {
             \Log::info('Delete request received for ID: ' . $id);
-            
+
             $pelanggan = Pelanggan::findOrFail($id);
             $nama = $pelanggan->nama_pelanggan;
-            
-            // Hapus data pelanggan
+
             $pelanggan->delete();
-            
+
             \Log::info('Customer deleted successfully: ' . $nama);
 
             // Return JSON response untuk AJAX request
@@ -235,14 +228,12 @@ class CustomerSearchController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             \Log::error('Customer not found: ' . $id);
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Data pelanggan tidak ditemukan.'
             ], 404);
-            
+
         } catch (\Exception $e) {
-            Log::error('Error deleting customer ID ' . $id . ': ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+            \Log::error('Error deleting customer: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()
@@ -430,5 +421,10 @@ class CustomerSearchController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    public function __construct()
+    {
+        $this->middleware('auth');
     }
 }

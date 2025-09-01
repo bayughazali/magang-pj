@@ -52,28 +52,25 @@
                         <input type="text" name="nomor_telepon" class="form-control" value="{{ old('nomor_telepon') }}" required>
                     </div>
 
-                    {{-- FIELD BARU: PROVINSI --}}
-                    {{-- FIELD BARU: PROVINSI --}}
+                   {{-- FIELD: PROVINSI --}}
                     <div class="col-md-4">
                         <label class="form-label">Provinsi *</label>
                         <select name="provinsi" id="provinsi" class="form-control" required>
                             <option value="">-- Pilih Provinsi --</option>
                             @foreach($regionData as $provinsi => $kabupaten)
-                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>
-                                    {{ $provinsi }}
-                                </option>
+                                <option value="{{ $provinsi }}">{{ $provinsi }}</option>
                             @endforeach
                         </select>
                     </div>
 
-
-                   {{-- FIELD BARU: KABUPATEN --}}
+                    {{-- FIELD: KABUPATEN --}}
                     <div class="col-md-4">
                         <label class="form-label">Kabupaten/Kota *</label>
                         <select name="kabupaten" id="kabupaten" class="form-control" required>
                             <option value="">-- Pilih Kabupaten --</option>
                         </select>
                     </div>
+
 
 
                     {{-- FIELD: KODE FAT --}}
@@ -438,10 +435,9 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""/>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
-
+      <script>
 // ====== DOM Elements ======
 const provinsiSelect = document.getElementById('provinsi');
 const kabupatenSelect = document.getElementById('kabupaten');
@@ -566,22 +562,14 @@ provinsiSelect.addEventListener('change', () => focusRegion(provinsiSelect.value
 kabupatenSelect.addEventListener('change', () => focusRegion(kabupatenSelect.value));
 
 </script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const provinsiSelect = document.getElementById("provinsi");
     const kabupatenSelect = document.getElementById("kabupaten");
-    const kodeFatInput   = document.getElementById("kode_fat");
-
-    // Reset input kode FAT
-    function resetKodeFat() {
-        kodeFatInput.value = "Akan terisi otomatis...";
-    }
 
     provinsiSelect.addEventListener("change", function() {
         const provinsi = this.value;
         kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        resetKodeFat();
 
         if (provinsi) {
             fetch(`/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
@@ -594,31 +582,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             option.textContent = kab;
                             kabupatenSelect.appendChild(option);
                         });
+                    } else {
+                        console.error("Error:", data.error);
                     }
                 })
                 .catch(error => console.error("AJAX Error:", error));
-        }
-    });
-
-    kabupatenSelect.addEventListener("change", function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = this.value;
-        resetKodeFat();
-
-        if (provinsi && kabupaten) {
-            fetch(`/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        kodeFatInput.value = data.kode_fat;
-                    } else {
-                        kodeFatInput.value = "Tidak ditemukan";
-                    }
-                })
-                .catch(error => {
-                    kodeFatInput.value = "Error mengambil data";
-                    console.error("AJAX Error:", error);
-                });
         }
     });
 });

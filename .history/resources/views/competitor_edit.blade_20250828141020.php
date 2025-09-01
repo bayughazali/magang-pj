@@ -1,3 +1,4 @@
+competitor_edit.blade.php (ini tampilan yg update)
 
 @extends('layouts.app')
 

@@ -54,20 +54,20 @@
 
                     {{-- FIELD BARU: PROVINSI --}}
                     {{-- FIELD BARU: PROVINSI --}}
-                    <div class="col-md-4">
-                        <label class="form-label">Provinsi *</label>
-                        <select name="provinsi" id="provinsi" class="form-control" required>
-                            <option value="">-- Pilih Provinsi --</option>
-                            @foreach($regionData as $provinsi => $kabupaten)
-                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>
-                                    {{ $provinsi }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+<div class="col-md-4">
+    <label class="form-label">Provinsi *</label>
+    <select name="provinsi" id="provinsi" class="form-control" required>
+        <option value="">-- Pilih Provinsi --</option>
+        @foreach($regionData as $provinsi => $kabupaten)
+            <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>
+                {{ $provinsi }}
+            </option>
+        @endforeach
+    </select>
+</div>
 
 
-                   {{-- FIELD BARU: KABUPATEN --}}
+                    {{-- FIELD BARU: KABUPATEN --}}
                     <div class="col-md-4">
                         <label class="form-label">Kabupaten/Kota *</label>
                         <select name="kabupaten" id="kabupaten" class="form-control" required>
@@ -75,16 +75,12 @@
                         </select>
                     </div>
 
-
-                    {{-- FIELD: KODE FAT --}}
+                    {{-- FIELD FAT YANG SUDAH OTOMATIS --}}
                     <div class="col-md-4">
                         <label class="form-label">Kode FAT</label>
-                        <input type="text" id="kode_fat" name="kode_fat"
-                            class="form-control text-center fw-bold text-success"
-                            placeholder="Akan terisi otomatis..." readonly>
+                        <input type="text" id="kode_fat" name="kode_fat" class="form-control fat-code-field" placeholder="Akan terisi otomatis..." value="{{ old('kode_fat') }}" readonly>
                         <small class="text-muted">Kode FAT akan muncul setelah memilih provinsi dan kabupaten</small>
                     </div>
-
 
                     <div class="col-md-6">
                         <label class="form-label">Alamat *</label>
@@ -441,7 +437,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-
 // ====== DOM Elements ======
 const provinsiSelect = document.getElementById('provinsi');
 const kabupatenSelect = document.getElementById('kabupaten');
@@ -567,61 +562,5 @@ kabupatenSelect.addEventListener('change', () => focusRegion(kabupatenSelect.val
 
 </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const provinsiSelect = document.getElementById("provinsi");
-    const kabupatenSelect = document.getElementById("kabupaten");
-    const kodeFatInput   = document.getElementById("kode_fat");
-
-    // Reset input kode FAT
-    function resetKodeFat() {
-        kodeFatInput.value = "Akan terisi otomatis...";
-    }
-
-    provinsiSelect.addEventListener("change", function() {
-        const provinsi = this.value;
-        kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        resetKodeFat();
-
-        if (provinsi) {
-            fetch(`/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        data.kabupaten.forEach(kab => {
-                            const option = document.createElement("option");
-                            option.value = kab;
-                            option.textContent = kab;
-                            kabupatenSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error("AJAX Error:", error));
-        }
-    });
-
-    kabupatenSelect.addEventListener("change", function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = this.value;
-        resetKodeFat();
-
-        if (provinsi && kabupaten) {
-            fetch(`/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        kodeFatInput.value = data.kode_fat;
-                    } else {
-                        kodeFatInput.value = "Tidak ditemukan";
-                    }
-                })
-                .catch(error => {
-                    kodeFatInput.value = "Error mengambil data";
-                    console.error("AJAX Error:", error);
-                });
-        }
-    });
-});
-</script>
 
 @endsection

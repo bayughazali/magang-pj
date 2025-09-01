@@ -65,19 +65,19 @@
   </div>
 </li>
 
-        <!-- Export Data -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
-             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ni ni-cloud-download-95 text-success mr-1"></i> Export Data
-          </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-export">
-            <a class="dropdown-item" href="{{ asset('/') }}argonpro/pages/export/activity.html">Report Activity</a>
-            <a class="dropdown-item" href="{{ asset('/') }}argonpro/pages/export/competitor.html">Report Competitor</a>
-            <a class="dropdown-item" href="{{ asset('/') }}argonpro/pages/export/operational.html">Report Operational</a>
-          </div>
-        </li>
-      </ul>
+       <!-- Export Data -->
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
+     role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="ni ni-cloud-download-95 text-success mr-1"></i> Export Data
+  </a>
+  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-export">
+    <a class="dropdown-item" href="{{ route('export.activity') }}">Report Activity</a>
+    <a class="dropdown-item" href="{{ route('export.competitor') }}">Report Competitor</a>
+    <a class="dropdown-item" href="{{ route('export.operational') }}">Report Operational</a>
+  </div>
+</li>
+
 <!-- Debug: Cek data user -->
 @php
     $user = Auth::user();

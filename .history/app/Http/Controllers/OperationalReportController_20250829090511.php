@@ -63,29 +63,24 @@ class OperationalReportController extends Controller
 
     public function index()
     {
+        // ✅ pakai paginate agar bisa akses total(), firstItem(), lastItem(), links()
+        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->paginate(10);
 
-        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
+        // ambil region
         $regionData = $this->getRegionData();
-        return view('report.operational.index', compact('pelanggans', 'regionData'));
+
+        // ambil competitor untuk dropdown (optional)
+        $competitors = Competitor::select('cluster', 'kecepatan')->distinct()->get();
+
+        return view('report.operational.index', compact('pelanggans', 'regionData', 'competitors'));
     }
 
-    // API untuk mendapatkan kabupaten berdasarkan provinsi - DENGAN DEBUGGING
+    // API untuk mendapatkan kabupaten berdasarkan provinsi
     public function getKabupaten(Request $request)
     {
         try {
             $provinsi = $request->input('provinsi');
-
-            // Log untuk debugging
-            Log::info('Get Kabupaten Request:', [
-                'provinsi' => $provinsi,
-                'all_params' => $request->all(),
-                'method' => $request->method(),
-                'url' => $request->fullUrl()
-            ]);
-
-            // Validasi input
             if (empty($provinsi)) {
-                Log::warning('Empty provinsi parameter');
                 return response()->json([
                     'kabupaten' => [],
                     'error' => 'Provinsi parameter is required'
@@ -93,44 +88,19 @@ class OperationalReportController extends Controller
             }
 
             $regionData = $this->getRegionData();
-
-            // Log data region untuk debugging
-            Log::info('Region Data Available:', [
-                'provinces' => array_keys($regionData)
-            ]);
-
             if (isset($regionData[$provinsi])) {
-                $kabupaten = array_keys($regionData[$provinsi]);
-
-                Log::info('Kabupaten Found:', [
-                    'provinsi' => $provinsi,
-                    'kabupaten_count' => count($kabupaten),
-                    'kabupaten' => $kabupaten
-                ]);
-
                 return response()->json([
-                    'kabupaten' => $kabupaten,
+                    'kabupaten' => array_keys($regionData[$provinsi]),
                     'success' => true
                 ]);
             }
-
-            Log::warning('Provinsi not found:', [
-                'requested_provinsi' => $provinsi,
-                'available_provinces' => array_keys($regionData)
-            ]);
 
             return response()->json([
                 'kabupaten' => [],
                 'error' => 'Provinsi not found',
                 'available_provinces' => array_keys($regionData)
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Get Kabupaten Error:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'kabupaten' => [],
                 'error' => 'Internal server error: ' . $e->getMessage()
@@ -138,21 +108,13 @@ class OperationalReportController extends Controller
         }
     }
 
-    // API untuk mendapatkan kode FAT berdasarkan provinsi dan kabupaten - DENGAN DEBUGGING
+    // API untuk mendapatkan kode FAT
     public function getKodeFat(Request $request)
     {
         try {
             $provinsi = $request->input('provinsi');
             $kabupaten = $request->input('kabupaten');
 
-            // Log untuk debugging
-            Log::info('Get Kode FAT Request:', [
-                'provinsi' => $provinsi,
-                'kabupaten' => $kabupaten,
-                'all_params' => $request->all()
-            ]);
-
-            // Validasi input
             if (empty($provinsi) || empty($kabupaten)) {
                 return response()->json([
                     'kode_fat' => '',
@@ -161,21 +123,11 @@ class OperationalReportController extends Controller
             }
 
             $regionData = $this->getRegionData();
-
             if (isset($regionData[$provinsi][$kabupaten])) {
-                // Ambil jumlah pelanggan yang sudah ada di kabupaten ini untuk numbering
                 $count = Pelanggan::where('provinsi', $provinsi)
-                                 ->where('kabupaten', $kabupaten)
-                                 ->count();
-
+                                  ->where('kabupaten', $kabupaten)
+                                  ->count();
                 $kodeFat = $regionData[$provinsi][$kabupaten] . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-
-                Log::info('Kode FAT Generated:', [
-                    'provinsi' => $provinsi,
-                    'kabupaten' => $kabupaten,
-                    'existing_count' => $count,
-                    'kode_fat' => $kodeFat
-                ]);
 
                 return response()->json([
                     'kode_fat' => $kodeFat,
@@ -183,49 +135,28 @@ class OperationalReportController extends Controller
                 ]);
             }
 
-            Log::warning('Provinsi/Kabupaten combination not found:', [
-                'provinsi' => $provinsi,
-                'kabupaten' => $kabupaten
-            ]);
-
             return response()->json([
                 'kode_fat' => '',
                 'error' => 'Provinsi/Kabupaten combination not found'
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Get Kode FAT Error:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'kode_fat' => '',
                 'error' => 'Internal server error: ' . $e->getMessage()
             ], 500);
         }
-        // Ambil data pelanggan agar bisa ditampilkan di tabel
-        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->paginate(10);
-
-        // Ambil data competitor untuk dropdown cluster dan kecepatan
-        $competitors = Competitor::select('cluster', 'kecepatan')->distinct()->get();
-
-        return view('report.operational.index', compact('pelanggans', 'competitors'));
     }
 
-    // Method untuk mendapatkan kecepatan berdasarkan cluster via AJAX
+    // Method untuk mendapatkan kecepatan berdasarkan cluster
     public function getKecepatanByCluster(Request $request)
     {
         $cluster = $request->get('cluster');
-
         $kecepatan = Competitor::where('cluster', $cluster)
                               ->select('kecepatan')
                               ->distinct()
                               ->whereNotNull('kecepatan')
                               ->pluck('kecepatan');
-
         return response()->json($kecepatan);
-
     }
 
     public function store(Request $request)
@@ -244,29 +175,19 @@ class OperationalReportController extends Controller
             'kode_fat'       => 'nullable|string|max:100',
         ]);
 
-        // Generate kode FAT otomatis jika kosong
         if (empty($validated['kode_fat'])) {
             $regionData = $this->getRegionData();
             if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
                 $count = Pelanggan::where('provinsi', $validated['provinsi'])
                                  ->where('kabupaten', $validated['kabupaten'])
                                  ->count();
-
                 $validated['kode_fat'] = $regionData[$validated['provinsi']][$validated['kabupaten']] . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
             }
         }
 
-        try {
-            Pelanggan::create($validated);
-            return redirect()->route('report.operational.index')
-                ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan dengan kode FAT: {$validated['kode_fat']}!");
-        } catch (\Exception $e) {
-            Log::error('Store Pelanggan Error:', [
-                'error' => $e->getMessage(),
-                'data' => $validated
-            ]);
-            return back()->withInput()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-        }
+        Pelanggan::create($validated);
+        return redirect()->route('report.operational.index')
+            ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan dengan kode FAT: {$validated['kode_fat']}!");
     }
 
     public function update(Request $request, $pelanggan)
@@ -287,24 +208,16 @@ class OperationalReportController extends Controller
             'kode_fat'       => 'nullable|string|max:100',
         ]);
 
-        try {
-            $pelangganData->update($validated);
-            return redirect()->route('report.operational.index')
-                ->with('success', "Data pelanggan berhasil diperbarui!");
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-        }
+        $pelangganData->update($validated);
+        return redirect()->route('report.operational.index')
+            ->with('success', "Data pelanggan berhasil diperbarui!");
     }
 
     public function destroy($pelanggan)
     {
-        try {
-            $pelangganData = Pelanggan::findOrFail($pelanggan);
-            $nama = $pelangganData->nama_pelanggan;
-            $pelangganData->delete();
-            return back()->with('success', "Data pelanggan {$nama} berhasil dihapus!");
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-        }
+        $pelangganData = Pelanggan::findOrFail($pelanggan);
+        $nama = $pelangganData->nama_pelanggan;
+        $pelangganData->delete();
+        return back()->with('success', "Data pelanggan {$nama} berhasil dihapus!");
     }
 }

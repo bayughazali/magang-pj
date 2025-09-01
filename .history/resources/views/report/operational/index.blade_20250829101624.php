@@ -53,38 +53,30 @@
                     </div>
 
                     {{-- FIELD BARU: PROVINSI --}}
-                    {{-- FIELD BARU: PROVINSI --}}
                     <div class="col-md-4">
                         <label class="form-label">Provinsi *</label>
                         <select name="provinsi" id="provinsi" class="form-control" required>
                             <option value="">-- Pilih Provinsi --</option>
                             @foreach($regionData as $provinsi => $kabupaten)
-                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>
-                                    {{ $provinsi }}
-                                </option>
+                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>{{ $provinsi }}</option>
                             @endforeach
                         </select>
                     </div>
 
-
-                   {{-- FIELD BARU: KABUPATEN --}}
+                    {{-- FIELD BARU: KABUPATEN --}}
                     <div class="col-md-4">
                         <label class="form-label">Kabupaten/Kota *</label>
-                        <select name="kabupaten" id="kabupaten" class="form-control" required>
+                        <select name="kabupaten" id="kabupaten" class="form-control" required disabled>
                             <option value="">-- Pilih Kabupaten --</option>
                         </select>
                     </div>
 
-
-                    {{-- FIELD: KODE FAT --}}
+                    {{-- FIELD FAT YANG SUDAH OTOMATIS --}}
                     <div class="col-md-4">
                         <label class="form-label">Kode FAT</label>
-                        <input type="text" id="kode_fat" name="kode_fat"
-                            class="form-control text-center fw-bold text-success"
-                            placeholder="Akan terisi otomatis..." readonly>
+                        <input type="text" id="kode_fat" name="kode_fat" class="form-control fat-code-field" placeholder="Akan terisi otomatis..." value="{{ old('kode_fat') }}" readonly>
                         <small class="text-muted">Kode FAT akan muncul setelah memilih provinsi dan kabupaten</small>
                     </div>
-
 
                     <div class="col-md-6">
                         <label class="form-label">Alamat *</label>
@@ -438,190 +430,5 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""/>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-
-// ====== DOM Elements ======
-const provinsiSelect = document.getElementById('provinsi');
-const kabupatenSelect = document.getElementById('kabupaten');
-const kodeFatInput = document.getElementById('kode_fat');
-const koordinatInput = document.getElementById('koordinat');
-const mapElement = document.getElementById('map');
-const mapStatus = document.getElementById('map-status');
-
-// ====== Initialize Map ======
-const map = L.map(mapElement).setView([-2.5489, 118.0149], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-
-const marker = L.marker([-2.5489, 118.0149], { draggable: true }).addTo(map);
-
-// ====== Helper Functions ======
-function updateMapStatus(message, type = 'info') {
-  const icons = {
-    info: 'fas fa-info-circle text-blue-500',
-    success: 'fas fa-check-circle text-green-500',
-    error: 'fas fa-exclamation-circle text-red-500'
-  };
-  mapStatus.innerHTML = `<i class="${icons[type] || icons.info}"></i> ${message}`;
-}
-
-function showNotification(message, type = 'success') {
-  const bg = type === 'error' ? 'bg-red-500' : 'bg-green-500';
-  const notification = document.createElement('div');
-  notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white ${bg} shadow-lg z-50`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-  setTimeout(() => notification.remove(), 3000);
-}
-
-function formatCoordinates(lat, lng) {
-  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-}
-
-// ====== Event Listeners ======
-
-// Provinsi -> fetch Kabupaten
-provinsiSelect.addEventListener('change', async function() {
-  const provinsi = this.value;
-  kabupatenSelect.innerHTML = '<option value="">Loading...</option>';
-  try {
-    const url = `/report/operational/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-    data.forEach(kab => {
-      const option = document.createElement('option');
-      option.value = kab.nama_kabupaten;
-      option.textContent = kab.nama_kabupaten;
-      kabupatenSelect.appendChild(option);
-    });
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification(`Gagal memuat data kabupaten: ${error.message}`, 'error');
-  }
-});
-
-// Kabupaten -> fetch kode FAT
-kabupatenSelect.addEventListener('change', async function() {
-  const provinsi = provinsiSelect.value;
-  const kabupaten = this.value;
-  try {
-    const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    kodeFatInput.value = data.kode_fat;
-    showNotification(`Kode FAT berhasil dibuat: ${data.kode_fat}`, 'success');
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification(`Gagal membuat kode FAT: ${error.message}`, 'error');
-  }
-});
-
-// Marker Drag -> update koordinat
-marker.on('dragend', function(e) {
-  const latlng = marker.getLatLng();
-  const formattedLat = latlng.lat.toFixed(6);
-  const formattedLng = latlng.lng.toFixed(6);
-  const formatted = formatCoordinates(latlng.lat, latlng.lng);
-  koordinatInput.value = formatted;
-  console.log(`Coordinates updated: ${formattedLat}, ${formattedLng}`);
-  updateMapStatus(`Koordinat diperbarui: ${formatted}`, 'success');
-});
-
-// Pindah map berdasarkan provinsi / kabupaten
-async function focusRegion(regionName) {
-  if (!regionName) return;
-  try {
-    updateMapStatus(`Berpindah ke ${regionName}...`, 'info');
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(regionName)}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.length > 0) {
-      const { lat, lon } = data[0];
-      const latNum = parseFloat(lat);
-      const lonNum = parseFloat(lon);
-      map.setView([latNum, lonNum], 11);
-      marker.setLatLng([latNum, lonNum]);
-      const formatted = formatCoordinates(latNum, lonNum);
-      koordinatInput.value = formatted;
-      updateMapStatus(`Lokasi: ${regionName}`, 'success');
-      showNotification(`Lokasi dipindahkan ke ${regionName}`, 'success');
-    }
-  } catch (error) {
-    console.error('Error focusing region:', error);
-    updateMapStatus(`Gagal memindahkan ke ${regionName}`, 'error');
-  }
-}
-
-provinsiSelect.addEventListener('change', () => focusRegion(provinsiSelect.value));
-kabupatenSelect.addEventListener('change', () => focusRegion(kabupatenSelect.value));
-
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const provinsiSelect = document.getElementById("provinsi");
-    const kabupatenSelect = document.getElementById("kabupaten");
-    const kodeFatInput   = document.getElementById("kode_fat");
-
-    // Reset input kode FAT
-    function resetKodeFat() {
-        kodeFatInput.value = "Akan terisi otomatis...";
-    }
-
-    provinsiSelect.addEventListener("change", function() {
-        const provinsi = this.value;
-        kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        resetKodeFat();
-
-        if (provinsi) {
-            fetch(`/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        data.kabupaten.forEach(kab => {
-                            const option = document.createElement("option");
-                            option.value = kab;
-                            option.textContent = kab;
-                            kabupatenSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error("AJAX Error:", error));
-        }
-    });
-
-    kabupatenSelect.addEventListener("change", function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = this.value;
-        resetKodeFat();
-
-        if (provinsi && kabupaten) {
-            fetch(`/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        kodeFatInput.value = data.kode_fat;
-                    } else {
-                        kodeFatInput.value = "Tidak ditemukan";
-                    }
-                })
-                .catch(error => {
-                    kodeFatInput.value = "Error mengambil data";
-                    console.error("AJAX Error:", error);
-                });
-        }
-    });
-});
-</script>
-
+ 
 @endsection

@@ -38,6 +38,20 @@
                         <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan') }}" required>
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label">Cluster *</label>
+                        <select name="cluster" id="cluster" class="form-control" required>
+                            <option value="">-- Pilih Cluster --</option>
+                            @php
+                                $uniqueClusters = $competitors->pluck('cluster')->unique();
+                            @endphp
+                            @foreach($uniqueClusters as $cluster)
+                                <option value="{{ $cluster }}" {{ old('cluster') == $cluster ? 'selected' : '' }}>
+                                    {{ $cluster }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Bandwidth *</label>
                         <select name="bandwidth" class="form-control" required>
                             <option value="">-- Pilih Kecepatan --</option>
@@ -53,38 +67,30 @@
                     </div>
 
                     {{-- FIELD BARU: PROVINSI --}}
-                    {{-- FIELD BARU: PROVINSI --}}
                     <div class="col-md-4">
                         <label class="form-label">Provinsi *</label>
                         <select name="provinsi" id="provinsi" class="form-control" required>
                             <option value="">-- Pilih Provinsi --</option>
                             @foreach($regionData as $provinsi => $kabupaten)
-                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>
-                                    {{ $provinsi }}
-                                </option>
+                                <option value="{{ $provinsi }}" {{ old('provinsi') == $provinsi ? 'selected' : '' }}>{{ $provinsi }}</option>
                             @endforeach
                         </select>
                     </div>
 
-
-                   {{-- FIELD BARU: KABUPATEN --}}
+                    {{-- FIELD BARU: KABUPATEN --}}
                     <div class="col-md-4">
                         <label class="form-label">Kabupaten/Kota *</label>
-                        <select name="kabupaten" id="kabupaten" class="form-control" required>
+                        <select name="kabupaten" id="kabupaten" class="form-control" required disabled>
                             <option value="">-- Pilih Kabupaten --</option>
                         </select>
                     </div>
 
-
-                    {{-- FIELD: KODE FAT --}}
+                    {{-- FIELD FAT YANG SUDAH OTOMATIS --}}
                     <div class="col-md-4">
                         <label class="form-label">Kode FAT</label>
-                        <input type="text" id="kode_fat" name="kode_fat"
-                            class="form-control text-center fw-bold text-success"
-                            placeholder="Akan terisi otomatis..." readonly>
+                        <input type="text" id="kode_fat" name="kode_fat" class="form-control fat-code-field" placeholder="Akan terisi otomatis..." value="{{ old('kode_fat') }}" readonly>
                         <small class="text-muted">Kode FAT akan muncul setelah memilih provinsi dan kabupaten</small>
                     </div>
-
 
                     <div class="col-md-6">
                         <label class="form-label">Alamat *</label>
@@ -438,190 +444,541 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""/>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
+// Global variables
+let map, marker;
+let mapInitialized = false;
 
-// ====== DOM Elements ======
-const provinsiSelect = document.getElementById('provinsi');
-const kabupatenSelect = document.getElementById('kabupaten');
-const kodeFatInput = document.getElementById('kode_fat');
-const koordinatInput = document.getElementById('koordinat');
-const mapElement = document.getElementById('map');
-const mapStatus = document.getElementById('map-status');
-
-// ====== Initialize Map ======
-const map = L.map(mapElement).setView([-2.5489, 118.0149], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-
-const marker = L.marker([-2.5489, 118.0149], { draggable: true }).addTo(map);
-
-// ====== Helper Functions ======
-function updateMapStatus(message, type = 'info') {
-  const icons = {
-    info: 'fas fa-info-circle text-blue-500',
-    success: 'fas fa-check-circle text-green-500',
-    error: 'fas fa-exclamation-circle text-red-500'
-  };
-  mapStatus.innerHTML = `<i class="${icons[type] || icons.info}"></i> ${message}`;
-}
-
-function showNotification(message, type = 'success') {
-  const bg = type === 'error' ? 'bg-red-500' : 'bg-green-500';
-  const notification = document.createElement('div');
-  notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white ${bg} shadow-lg z-50`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-  setTimeout(() => notification.remove(), 3000);
-}
-
-function formatCoordinates(lat, lng) {
-  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-}
-
-// ====== Event Listeners ======
-
-// Provinsi -> fetch Kabupaten
-provinsiSelect.addEventListener('change', async function() {
-  const provinsi = this.value;
-  kabupatenSelect.innerHTML = '<option value="">Loading...</option>';
-  try {
-    const url = `/report/operational/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+// Region configuration
+const regions = {
+    bali: {
+        center: [-8.409518, 115.188916],
+        zoom: 10,
+        name: 'Bali'
+    },
+    ntb: {
+        center: [-8.652894, 117.362238],
+        zoom: 9,
+        name: 'Nusa Tenggara Barat'
+    },
+    ntt: {
+        center: [-8.874650, 121.727200],
+        zoom: 8,
+        name: 'Nusa Tenggara Timur'
     }
-    const data = await response.json();
-    kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-    data.forEach(kab => {
-      const option = document.createElement('option');
-      option.value = kab.nama_kabupaten;
-      option.textContent = kab.nama_kabupaten;
-      kabupatenSelect.appendChild(option);
-    });
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification(`Gagal memuat data kabupaten: ${error.message}`, 'error');
-  }
-});
+};
 
-// Kabupaten -> fetch kode FAT
-kabupatenSelect.addEventListener('change', async function() {
-  const provinsi = provinsiSelect.value;
-  const kabupaten = this.value;
-  try {
-    const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    kodeFatInput.value = data.kode_fat;
-    showNotification(`Kode FAT berhasil dibuat: ${data.kode_fat}`, 'success');
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification(`Gagal membuat kode FAT: ${error.message}`, 'error');
-  }
-});
+// JAVASCRIPT UNTUK AUTO DROPDOWN DAN FAT - FIXED VERSION
+document.addEventListener('DOMContentLoaded', function() {
+    const provinsiSelect = document.getElementById('provinsi');
+    const kabupatenSelect = document.getElementById('kabupaten');
+    const kodeFatInput = document.getElementById('kode_fat');
 
-// Marker Drag -> update koordinat
-marker.on('dragend', function(e) {
-  const latlng = marker.getLatLng();
-  const formattedLat = latlng.lat.toFixed(6);
-  const formattedLng = latlng.lng.toFixed(6);
-  const formatted = formatCoordinates(latlng.lat, latlng.lng);
-  koordinatInput.value = formatted;
-  console.log(`Coordinates updated: ${formattedLat}, ${formattedLng}`);
-  updateMapStatus(`Koordinat diperbarui: ${formatted}`, 'success');
-});
-
-// Pindah map berdasarkan provinsi / kabupaten
-async function focusRegion(regionName) {
-  if (!regionName) return;
-  try {
-    updateMapStatus(`Berpindah ke ${regionName}...`, 'info');
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(regionName)}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.length > 0) {
-      const { lat, lon } = data[0];
-      const latNum = parseFloat(lat);
-      const lonNum = parseFloat(lon);
-      map.setView([latNum, lonNum], 11);
-      marker.setLatLng([latNum, lonNum]);
-      const formatted = formatCoordinates(latNum, lonNum);
-      koordinatInput.value = formatted;
-      updateMapStatus(`Lokasi: ${regionName}`, 'success');
-      showNotification(`Lokasi dipindahkan ke ${regionName}`, 'success');
-    }
-  } catch (error) {
-    console.error('Error focusing region:', error);
-    updateMapStatus(`Gagal memindahkan ke ${regionName}`, 'error');
-  }
-}
-
-provinsiSelect.addEventListener('change', () => focusRegion(provinsiSelect.value));
-kabupatenSelect.addEventListener('change', () => focusRegion(kabupatenSelect.value));
-
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const provinsiSelect = document.getElementById("provinsi");
-    const kabupatenSelect = document.getElementById("kabupaten");
-    const kodeFatInput   = document.getElementById("kode_fat");
-
-    // Reset input kode FAT
-    function resetKodeFat() {
-        kodeFatInput.value = "Akan terisi otomatis...";
-    }
-
-    provinsiSelect.addEventListener("change", function() {
+    // Event handler saat provinsi dipilih
+    provinsiSelect.addEventListener('change', function() {
         const provinsi = this.value;
+
+        console.log('Provinsi selected:', provinsi); // Debug log
+
+        // Reset kabupaten dan kode FAT
         kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        resetKodeFat();
+        kabupatenSelect.disabled = true;
+        kodeFatInput.value = '';
 
         if (provinsi) {
-            fetch(`/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
-                .then(response => response.json())
+            const url = `/report/operational/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`;
+            console.log('Fetching kabupaten URL:', url); // Debug log
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success) {
+                    console.log('Kabupaten response:', data); // Debug log
+
+                    kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
+
+                    if (data.kabupaten && Array.isArray(data.kabupaten) && data.kabupaten.length > 0) {
                         data.kabupaten.forEach(kab => {
-                            const option = document.createElement("option");
+                            const option = document.createElement('option');
                             option.value = kab;
                             option.textContent = kab;
                             kabupatenSelect.appendChild(option);
                         });
-                    }
-                })
-                .catch(error => console.error("AJAX Error:", error));
-        }
-    });
-
-    kabupatenSelect.addEventListener("change", function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = this.value;
-        resetKodeFat();
-
-        if (provinsi && kabupaten) {
-            fetch(`/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        kodeFatInput.value = data.kode_fat;
+                        kabupatenSelect.disabled = false;
+                        showNotification('Kabupaten berhasil dimuat!', 'success');
                     } else {
-                        kodeFatInput.value = "Tidak ditemukan";
+                        kabupatenSelect.innerHTML = '<option value="">Tidak ada kabupaten</option>';
+                        showNotification('Tidak ada data kabupaten untuk provinsi ini', 'warning');
                     }
                 })
                 .catch(error => {
-                    kodeFatInput.value = "Error mengambil data";
-                    console.error("AJAX Error:", error);
+                    console.error('Fetch error:', error);
+                    kabupatenSelect.innerHTML = '<option value="">Error loading data</option>';
+                    showNotification(`Gagal memuat data kabupaten: ${error.message}`, 'error');
                 });
         }
     });
+
+    // Event handler saat kabupaten dipilih - GENERATE KODE FAT
+    kabupatenSelect.addEventListener('change', function() {
+        const provinsi = provinsiSelect.value;
+        const kabupaten = this.value;
+
+        console.log('Kabupaten selected:', kabupaten, 'for provinsi:', provinsi); // Debug log
+
+        if (provinsi && kabupaten) {
+            const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
+            console.log('Fetching FAT code URL:', url); // Debug log
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('FAT code response:', data); // Debug log
+
+                    if (data.kode_fat) {
+                        kodeFatInput.value = data.kode_fat;
+                        kodeFatInput.classList.add('fat-updated');
+                        showNotification(`Kode FAT berhasil dibuat: ${data.kode_fat}`, 'success');
+
+                        // Remove animation class after animation
+                        setTimeout(() => {
+                            kodeFatInput.classList.remove('fat-updated');
+                        }, 1200);
+                    } else {
+                        kodeFatInput.value = '';
+                        showNotification('Tidak dapat membuat kode FAT', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('FAT code fetch error:', error);
+                    showNotification(`Gagal membuat kode FAT: ${error.message}`, 'error');
+                });
+        }
+    });
+
+    // Load kabupaten jika ada old value (untuk form validation error)
+    const oldProvinsi = provinsiSelect.value;
+    const oldKabupaten = '{{ old("kabupaten") }}';
+
+    console.log('Old values - Provinsi:', oldProvinsi, 'Kabupaten:', oldKabupaten); // Debug log
+
+    if (oldProvinsi) {
+        // Trigger the change event programmatically
+        const event = new Event('change');
+        provinsiSelect.dispatchEvent(event);
+
+        // Wait for the kabupaten to load, then set the old value
+        setTimeout(() => {
+            if (oldKabupaten) {
+                kabupatenSelect.value = oldKabupaten;
+                // Trigger kabupaten change to generate FAT code
+                const kabEvent = new Event('change');
+                kabupatenSelect.dispatchEvent(kabEvent);
+            }
+        }, 1000);
+    }
+});
+
+// Check if Leaflet is loaded
+function checkLeafletLoad() {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        const check = () => {
+            attempts++;
+
+            if (typeof L !== 'undefined' && L.map) {
+                console.log('Leaflet loaded successfully');
+                resolve(true);
+            } else if (attempts >= maxAttempts) {
+                console.error('Leaflet failed to load after', maxAttempts, 'attempts');
+                reject(new Error('Leaflet tidak dapat dimuat'));
+            } else {
+                console.log('Checking Leaflet...', attempts);
+                setTimeout(check, 500);
+            }
+        };
+
+        check();
+    });
+}
+
+async function initializeMap() {
+    if (mapInitialized) return;
+
+    try {
+        console.log('Starting map initialization...');
+
+        // Wait for Leaflet to load
+        await checkLeafletLoad();
+
+        // Default location (Bali)
+        const defaultLocation = regions.bali.center;
+
+        // Initialize Leaflet map immediately
+        map = L.map('map', {
+            center: defaultLocation,
+            zoom: regions.bali.zoom,
+            zoomControl: true,
+            scrollWheelZoom: true,
+            doubleClickZoom: true,
+            dragging: true,
+            attributionControl: false
+        });
+
+        // Add OpenStreetMap tiles with error handling
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            minZoom: 5,
+            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        });
+
+        tileLayer.on('tileerror', function(error) {
+            console.warn('Tile loading error:', error);
+        });
+
+        tileLayer.addTo(map);
+
+        // Create enhanced custom marker
+        const customIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div class="custom-marker"></div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+        });
+
+        // Add draggable marker with enhanced interaction
+        marker = L.marker(defaultLocation, {
+            draggable: true,
+            icon: customIcon,
+            riseOnHover: true
+        }).addTo(map);
+
+        // Enhanced marker tooltip
+        marker.bindTooltip('Seret untuk mengubah lokasi', {
+            permanent: false,
+            direction: 'top',
+            offset: [0, -30]
+        });
+
+        // Real-time coordinate update events
+        marker.on('dragstart', function(e) {
+            updateMapStatus('Mengubah koordinat...', 'warning');
+            const tooltip = e.target.getTooltip();
+            if (tooltip) tooltip.setContent('Mengubah lokasi...');
+        });
+
+        marker.on('drag', function(e) {
+            const pos = e.target.getLatLng();
+            // Update coordinates in real-time during drag
+            updateCoordinatesRealTime(pos.lat, pos.lng);
+        });
+
+        marker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            updateCoordinates(pos.lat, pos.lng);
+            updateMapStatus('Koordinat berhasil diubah', 'success');
+
+            // Show success notification
+            showNotification(`Koordinat diubah ke: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`, 'success');
+
+            // Reset tooltip
+            const tooltip = e.target.getTooltip();
+            if (tooltip) tooltip.setContent('Seret untuk mengubah lokasi');
+
+            // Add pulse effect to coordinate panel
+            const panel = document.querySelector('.coordinate-panel');
+            if (panel) {
+                panel.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    panel.style.transform = 'scale(1)';
+                }, 200);
+            }
+        });
+
+        // Enhanced map click event
+        map.on('click', function(e) {
+            const pos = e.latlng;
+            marker.setLatLng(pos);
+            updateCoordinates(pos.lat, pos.lng);
+            updateMapStatus('Lokasi dipindah via klik', 'info');
+            showNotification('Marker dipindah ke lokasi yang diklik', 'info');
+
+            // Smooth animation
+            map.flyTo(pos, map.getZoom(), {
+                animate: true,
+                duration: 0.5
+            });
+        });
+
+        // Set boundaries for Indonesia Timur
+        const bounds = L.latLngBounds([[-11.5, 113.0], [-7.0, 125.0]]);
+        map.setMaxBounds(bounds);
+
+        map.on('drag', function() {
+            map.panInsideBounds(bounds, { animate: false });
+        });
+
+        // Initial coordinate update
+        updateCoordinates(defaultLocation[0], defaultLocation[1]);
+
+        // Force map to invalidate size after initialization
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                console.log('Map size invalidated');
+            }
+        }, 100);
+
+        mapInitialized = true;
+        console.log('Map initialized successfully!');
+        showNotification('Peta berhasil dimuat!', 'success');
+
+    } catch (error) {
+        console.error('Map initialization error:', error);
+        showMapError('Terjadi kesalahan saat memuat peta. Silakan refresh halaman.');
+    }
+}
+
+function updateCoordinatesRealTime(lat, lng) {
+    const formattedLat = lat.toFixed(6);
+    const formattedLng = lng.toFixed(6);
+
+    // Update display panel only (not form inputs during drag for performance)
+    const displayLat = document.getElementById('display-lat');
+    const displayLng = document.getElementById('display-lng');
+
+    if (displayLat) {
+        displayLat.textContent = formattedLat;
+        displayLat.style.backgroundColor = '#ffc107'; // Warning color during drag
+    }
+    if (displayLng) {
+        displayLng.textContent = formattedLng;
+        displayLng.style.backgroundColor = '#ffc107';
+    }
+
+    // Update region info
+    const regionName = getRegionName(lat, lng);
+    const regionInfo = document.getElementById('region-info');
+    if (regionInfo) regionInfo.textContent = regionName;
+}
+
+function updateCoordinates(lat, lng) {
+    const formattedLat = lat.toFixed(6);
+    const formattedLng = lng.toFixed(6);
+
+    // Update form inputs
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+
+    if (latInput) latInput.value = formattedLat;
+    if (lngInput) lngInput.value = formattedLng;
+
+    // Update display panel with final colors
+    const displayLat = document.getElementById('display-lat');
+    const displayLng = document.getElementById('display-lng');
+
+    if (displayLat) {
+        displayLat.textContent = formattedLat;
+        displayLat.style.backgroundColor = '#007bff'; // Back to primary color
+        displayLat.classList.add('coordinate-updated');
+    }
+    if (displayLng) {
+        displayLng.textContent = formattedLng;
+        displayLng.style.backgroundColor = '#28a745'; // Back to success color
+        displayLng.classList.add('coordinate-updated');
+    }
+
+    // Remove animation class after animation
+    setTimeout(() => {
+        if (displayLat) displayLat.classList.remove('coordinate-updated');
+        if (displayLng) displayLng.classList.remove('coordinate-updated');
+    }, 1000);
+
+    // Update region info
+    const regionName = getRegionName(lat, lng);
+    const regionInfo = document.getElementById('region-info');
+    if (regionInfo) regionInfo.textContent = regionName;
+
+    // Log for debugging
+    console.log(`Coordinates updated: ${formattedLat}, ${formattedLng} (${regionName})`);
+}
+
+function updateMapStatus(message, type = 'success') {
+    const statusEl = document.getElementById('map-status');
+    if (statusEl) {
+        const colors = {
+            success: 'bg-success',
+            warning: 'bg-warning',
+            info: 'bg-info',
+            error: 'bg-danger'
+        };
+
+        const icons = {
+            success: 'fas fa-check-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle',
+            error: 'fas fa-times-circle'
+        };
+
+        // Remove all color classes
+        Object.values(colors).forEach(cls => statusEl.classList.remove(cls));
+
+        // Add new color
+        statusEl.classList.add(colors[type] || colors.success);
+        statusEl.innerHTML = `<i class="${icons[type] || icons.success}"></i> ${message}`;
+
+        // Auto reset after 3 seconds
+        setTimeout(() => {
+            if (statusEl.classList.contains(colors[type])) {
+                statusEl.classList.remove(colors[type]);
+                statusEl.classList.add('bg-success');
+                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Peta Aktif';
+            }
+        }, 3000);
+    }
+}
+
+function getRegionName(lat, lng) {
+    if (lng >= 114.0 && lng <= 116.5 && lat >= -9.0 && lat <= -8.0) {
+        return 'Bali';
+    } else if (lng >= 115.5 && lng <= 119.5 && lat >= -9.5 && lat <= -8.0) {
+        return 'Nusa Tenggara Barat';
+    } else if (lng >= 119.0 && lng <= 125.0 && lat >= -10.5 && lat <= -8.0) {
+        return 'Nusa Tenggara Timur';
+    } else {
+        return 'Indonesia Timur';
+    }
+}
+
+function focusRegion(regionKey) {
+    if (!map || !marker || !mapInitialized) {
+        console.warn('Map not initialized yet');
+        return;
+    }
+
+    const region = regions[regionKey];
+    if (region) {
+        updateMapStatus(`Berpindah ke ${region.name}...`, 'info');
+
+        // Smooth fly animation
+        map.flyTo(region.center, region.zoom, {
+            animate: true,
+            duration: 2
+        });
+
+        // Move marker with delay for better UX
+        setTimeout(() => {
+            marker.setLatLng(region.center);
+            updateCoordinates(region.center[0], region.center[1]);
+            updateMapStatus(`Lokasi: ${region.name}`, 'success');
+            showNotification(`Lokasi dipindahkan ke ${region.name}`, 'success');
+        }, 1000);
+
+        // Add visual feedback to clicked button
+        const buttons = document.querySelectorAll('.region-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        const clickedBtn = document.querySelector(`[onclick="focusRegion('${regionKey}')"]`);
+        if (clickedBtn) {
+            clickedBtn.classList.add('active');
+            setTimeout(() => clickedBtn.classList.remove('active'), 3000);
+        }
+    }
+}
+
+// Enhanced notification function with better error handling
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.temp-notification');
+    existing.forEach(n => n.remove());
+
+    const alertClass = type === 'success' ? 'alert-success' :
+                       type === 'error' ? 'alert-danger' :
+                       type === 'warning' ? 'alert-warning' :
+                       'alert-info';
+    const iconClass = type === 'success' ? 'fa-check-circle' :
+                      type === 'error' ? 'fa-exclamation-triangle' :
+                      type === 'warning' ? 'fa-exclamation-triangle' :
+                      'fa-info-circle';
+
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed temp-notification`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px; font-size: 0.9rem;';
+    notification.innerHTML = `
+        <i class="fas ${iconClass} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function showMapError(message) {
+    const container = document.getElementById('mapContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                <div class="text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                    <h5>Peta Tidak Dapat Dimuat</h5>
+                    <p class="text-muted">${message}</p>
+                    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                        <i class="fas fa-refresh me-1"></i> Muat Ulang
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing map...');
+
+    // Add Leaflet script dynamically
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+    script.crossOrigin = '';
+
+    script.onload = function() {
+        console.log('Leaflet script loaded');
+        setTimeout(initializeMap, 100);
+    };
+
+    script.onerror = function() {
+        console.error('Failed to load Leaflet script');
+        showMapError('Gagal memuat library peta. Periksa koneksi internet Anda.');
+    };
+
+    document.head.appendChild(script);
+});
+
+// Additional fallback
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (!mapInitialized) {
+            console.log('Fallback initialization...');
+            initializeMap();
+        }
+    }, 2000);
 });
 </script>
-
 @endsection

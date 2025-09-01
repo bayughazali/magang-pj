@@ -9,124 +9,94 @@ use Illuminate\Support\Facades\Log;
 
 class CustomerSearchController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Tampilkan halaman pencarian pelanggan & kode FAT
      */
     public function index(Request $request)
     {
-        try {
-            // Pastikan variable selalu ada, bahkan jika kosong
-            $filterField = $request->get('filter_field', '');
-            $filterQuery = $request->get('filter_query', '');
+        // Pastikan variable selalu ada, bahkan jika kosong
+        $filterField = $request->get('filter_field', '');
+        $filterQuery = $request->get('filter_query', '');
 
-            // Query builder untuk pencarian
-            $query = Pelanggan::query();
+        // Query builder untuk pencarian
+        $query = Pelanggan::query();
 
-            // Jika tidak ada parameter pencarian, tampilkan semua data dengan limit
-            $hasFilter = false;
+        // Jika tidak ada parameter pencarian, tampilkan semua data dengan limit
+        $hasFilter = false;
 
-            // Apply filter berdasarkan field dan query
-            if ($filterField && $filterQuery) {
-                $hasFilter = true;
-                switch ($filterField) {
-                    case 'id_pelanggan':
-                        $query->where('id_pelanggan', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'nama_pelanggan':
-                        $query->where('nama_pelanggan', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'bandwidth':
-                        $query->where('bandwidth', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'alamat':
-                        $query->where('alamat', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'provinsi':
-                        $query->where('provinsi', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'kabupaten':
-                        $query->where('kabupaten', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'nomor_telepon':
-                        $query->where('nomor_telepon', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'cluster':
-                        $query->where('cluster', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'kode_fat':
-                        $query->where('kode_fat', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'latitude':
-                        $query->where('latitude', 'like', "%{$filterQuery}%");
-                        break;
-                    case 'longitude':
-                        $query->where('longitude', 'like', "%{$filterQuery}%");
-                        break;
-                    default:
-                        // Search di semua field jika tidak spesifik
-                        $query->where(function($q) use ($filterQuery) {
-                            $q->where('id_pelanggan', 'like', "%{$filterQuery}%")
-                              ->orWhere('nama_pelanggan', 'like', "%{$filterQuery}%")
-                              ->orWhere('bandwidth', 'like', "%{$filterQuery}%")
-                              ->orWhere('alamat', 'like', "%{$filterQuery}%")
-                              ->orWhere('provinsi', 'like', "%{$filterQuery}%")
-                              ->orWhere('kabupaten', 'like', "%{$filterQuery}%")
-                              ->orWhere('nomor_telepon', 'like', "%{$filterQuery}%")
-                              ->orWhere('cluster', 'like', "%{$filterQuery}%")
-                              ->orWhere('kode_fat', 'like', "%{$filterQuery}%");
-                        });
-                        break;
-                }
-            } elseif ($filterQuery && !$filterField) {
-                $hasFilter = true;
-                // Search di semua field jika hanya ada query tanpa field spesifik
-                $query->where(function($q) use ($filterQuery) {
-                    $q->where('id_pelanggan', 'like', "%{$filterQuery}%")
-                      ->orWhere('nama_pelanggan', 'like', "%{$filterQuery}%")
-                      ->orWhere('bandwidth', 'like', "%{$filterQuery}%")
-                      ->orWhere('alamat', 'like', "%{$filterQuery}%")
-                      ->orWhere('provinsi', 'like', "%{$filterQuery}%")
-                      ->orWhere('kabupaten', 'like', "%{$filterQuery}%")
-                      ->orWhere('nomor_telepon', 'like', "%{$filterQuery}%")
-                      ->orWhere('cluster', 'like', "%{$filterQuery}%")
-                      ->orWhere('kode_fat', 'like', "%{$filterQuery}%");
-                });
+        // Apply filter berdasarkan field dan query
+        if ($filterField && $filterQuery) {
+            $hasFilter = true;
+            switch ($filterField) {
+                case 'id_pelanggan':
+                    $query->where('id_pelanggan', 'like', "%{$filterQuery}%");
+                    break;
+                case 'nama_pelanggan':
+                    $query->where('nama_pelanggan', 'like', "%{$filterQuery}%");
+                    break;
+                case 'bandwidth':
+                    $query->where('bandwidth', 'like', "%{$filterQuery}%");
+                    break;
+                case 'alamat':
+                    $query->where('alamat', 'like', "%{$filterQuery}%");
+                    break;
+                case 'provinsi':
+                    $query->where('provinsi', 'like', "%{$filterQuery}%");
+                    break;
+                case 'kabupaten':
+                    $query->where('kabupaten', 'like', "%{$filterQuery}%");
+                    break;
+                case 'nomor_telepon':
+                    $query->where('nomor_telepon', 'like', "%{$filterQuery}%");
+                    break;
+                case 'cluster':
+                    $query->where('cluster', 'like', "%{$filterQuery}%");
+                    break;
+                case 'kode_fat':
+                    $query->where('kode_fat', 'like', "%{$filterQuery}%");
+                    break;
+                case 'latitude':
+                    $query->where('latitude', 'like', "%{$filterQuery}%");
+                    break;
+                case 'longitude':
+                    $query->where('longitude', 'like', "%{$filterQuery}%");
+                    break;
+                default:
+                    // Search di semua field jika tidak spesifik
+                    $query->where(function($q) use ($filterQuery) {
+                        $q->where('id_pelanggan', 'like', "%{$filterQuery}%")
+                          ->orWhere('nama_pelanggan', 'like', "%{$filterQuery}%")
+                          ->orWhere('bandwidth', 'like', "%{$filterQuery}%")
+                          ->orWhere('alamat', 'like', "%{$filterQuery}%")
+                          ->orWhere('provinsi', 'like', "%{$filterQuery}%")
+                          ->orWhere('kabupaten', 'like', "%{$filterQuery}%")
+                          ->orWhere('nomor_telepon', 'like', "%{$filterQuery}%")
+                          ->orWhere('cluster', 'like', "%{$filterQuery}%")
+                          ->orWhere('kode_fat', 'like', "%{$filterQuery}%");
+                    });
+                    break;
             }
+        } elseif ($filterQuery && !$filterField) {
+            $hasFilter = true;
+            // Search di semua field jika hanya ada query tanpa field spesifik
+            $query->where(function($q) use ($filterQuery) {
+                $q->where('id_pelanggan', 'like', "%{$filterQuery}%")
+                  ->orWhere('nama_pelanggan', 'like', "%{$filterQuery}%")
+                  ->orWhere('bandwidth', 'like', "%{$filterQuery}%")
+                  ->orWhere('alamat', 'like', "%{$filterQuery}%")
+                  ->orWhere('provinsi', 'like', "%{$filterQuery}%")
+                  ->orWhere('kabupaten', 'like', "%{$filterQuery}%")
+                  ->orWhere('nomor_telepon', 'like', "%{$filterQuery}%")
+                  ->orWhere('cluster', 'like', "%{$filterQuery}%")
+                  ->orWhere('kode_fat', 'like', "%{$filterQuery}%");
+            });
+        }
 
         // Order by latest dan paginate
         $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
 
-            // Pastikan $pelanggans tidak null
-            if (!$pelanggans) {
-                $pelanggans = Pelanggan::paginate(15);
-            }
-
-            // PERBAIKAN: Pastikan semua variable yang dibutuhkan view selalu ada
-            return view('report.customer.search', [
-                'pelanggans' => $pelanggans,
-                'filterField' => $filterField ?? '',
-                'filterQuery' => $filterQuery ?? '',
-                'hasFilter' => $hasFilter ?? false
-            ]);
-
-        } catch (\Exception $e) {
-            // Jika ada error, tetap kirim data kosong ke view
-            \Log::error('Error in customer search: ' . $e->getMessage());
-
-            $pelanggans = Pelanggan::paginate(15);
-
-            return view('report.customer.search', [
-                'pelanggans' => $pelanggans,
-                'filterField' => '',
-                'filterQuery' => '',
-                'hasFilter' => false
-            ])->withErrors(['error' => 'Terjadi kesalahan saat memuat data']);
-        }
+        // PERBAIKAN: Pastikan semua variable yang dibutuhkan view selalu ada
+        return view('report.customer.search', compact('pelanggans', 'filterField', 'filterQuery', 'hasFilter'));
     }
 
     /**
@@ -211,19 +181,17 @@ class CustomerSearchController extends Controller
 
     /**
      * Hapus data pelanggan dari halaman pencarian
-     * FIXED: Method destroy yang akan dipanggil oleh JavaScript
      */
     public function destroy($id)
     {
         try {
             \Log::info('Delete request received for ID: ' . $id);
-            
+
             $pelanggan = Pelanggan::findOrFail($id);
             $nama = $pelanggan->nama_pelanggan;
-            
-            // Hapus data pelanggan
+
             $pelanggan->delete();
-            
+
             \Log::info('Customer deleted successfully: ' . $nama);
 
             // Return JSON response untuk AJAX request
@@ -235,14 +203,12 @@ class CustomerSearchController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             \Log::error('Customer not found: ' . $id);
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Data pelanggan tidak ditemukan.'
             ], 404);
-            
+
         } catch (\Exception $e) {
-            Log::error('Error deleting customer ID ' . $id . ': ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+            \Log::error('Error deleting customer: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()
@@ -430,5 +396,10 @@ class CustomerSearchController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    public function __construct()
+    {
+        $this->middleware('auth');
     }
 }
