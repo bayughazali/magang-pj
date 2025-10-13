@@ -16,7 +16,7 @@
                             </div>
                         </div>
                         <div class="text-end">
-                            <h5 class="mb-0">{{ isset($pelanggans) ? $pelanggans->total() : 0 }}</h5>
+                            <h5 class="mb-0">{{ isset($pelanggans) && !empty($pelanggans) ? (is_countable($pelanggans) ? count($pelanggans) : (method_exists($pelanggans, 'total') ? $pelanggans->total() : 0)) : 0 }}</h5>
                             <small class="opacity-75">Total Data</small>
                         </div>
                     </div>
@@ -50,7 +50,7 @@
                             <i class="fas fa-filter me-2"></i>Filter Pencarian
                         </h6>
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary" onclick="showBasicSearch()">
+                            <button type="button" class="btn btn-outline-primary active" onclick="showBasicSearch()">
                                 <i class="fas fa-search me-1"></i>Basic
                             </button>
                             <button type="button" class="btn btn-outline-info" onclick="showAdvancedSearch()">
@@ -87,9 +87,9 @@
                                         <span class="input-group-text">
                                             <i class="fas fa-search"></i>
                                         </span>
-                                        <input type="text" class="form-control" id="filter_query" name="filter_query"
-                                               placeholder="Masukkan kata kunci pencarian..."
-                                               value="{{ $filterQuery ?? '' }}">
+                                        <input type="text" class="form-control" id="filter_query" name="filter_query" 
+                                               placeholder="Masukkan kata kunci pencarian..." 
+                                               value="{{ request('filter_query') ?? '' }}">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -109,17 +109,16 @@
 
                     <!-- Advanced Search Form (Hidden by default) -->
                     <div id="advancedSearchForm" style="display: none;">
-                        <form method="GET" action="{{ route('customer.search.advanced') }}">
+                        <form method="GET" action="{{ route('customer.search') }}">
+                            <input type="hidden" name="advanced" value="1">
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Cluster</label>
                                     <select class="form-select" name="cluster_filter">
                                         <option value="">Semua Cluster</option>
-                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
-                                            @foreach($pelanggans->pluck('cluster')->unique()->sort() as $cluster)
-                                                @if($cluster)
-                                                    <option value="{{ $cluster }}">{{ $cluster }}</option>
-                                                @endif
+                                        @if(isset($clusters) && !empty($clusters))
+                                            @foreach($clusters as $cluster)
+                                                <option value="{{ $cluster }}" {{ request('cluster_filter') == $cluster ? 'selected' : '' }}>{{ $cluster }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -128,11 +127,9 @@
                                     <label class="form-label fw-semibold">Provinsi</label>
                                     <select class="form-select" name="provinsi_filter">
                                         <option value="">Semua Provinsi</option>
-                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
-                                            @foreach($pelanggans->pluck('provinsi')->unique()->sort() as $provinsi)
-                                                @if($provinsi)
-                                                    <option value="{{ $provinsi }}">{{ $provinsi }}</option>
-                                                @endif
+                                        @if(isset($provinsis) && !empty($provinsis))
+                                            @foreach($provinsis as $provinsi)
+                                                <option value="{{ $provinsi }}" {{ request('provinsi_filter') == $provinsi ? 'selected' : '' }}>{{ $provinsi }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -141,11 +138,9 @@
                                     <label class="form-label fw-semibold">Kabupaten</label>
                                     <select class="form-select" name="kabupaten_filter">
                                         <option value="">Semua Kabupaten</option>
-                                        @if(isset($pelanggans) && $pelanggans->count() > 0)
-                                            @foreach($pelanggans->pluck('kabupaten')->unique()->sort() as $kabupaten)
-                                                @if($kabupaten)
-                                                    <option value="{{ $kabupaten }}">{{ $kabupaten }}</option>
-                                                @endif
+                                        @if(isset($kabupatens) && !empty($kabupatens))
+                                            @foreach($kabupatens as $kabupaten)
+                                                <option value="{{ $kabupaten }}" {{ request('kabupaten_filter') == $kabupaten ? 'selected' : '' }}>{{ $kabupaten }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -154,10 +149,10 @@
                                     <label class="form-label fw-semibold">Range Bandwidth</label>
                                     <div class="row g-2">
                                         <div class="col-6">
-                                            <input type="number" class="form-control" name="bandwidth_min" placeholder="Min">
+                                            <input type="number" class="form-control" name="bandwidth_min" placeholder="Min" value="{{ request('bandwidth_min') }}">
                                         </div>
                                         <div class="col-6">
-                                            <input type="number" class="form-control" name="bandwidth_max" placeholder="Max">
+                                            <input type="number" class="form-control" name="bandwidth_max" placeholder="Max" value="{{ request('bandwidth_max') }}">
                                         </div>
                                     </div>
                                 </div>
@@ -165,10 +160,10 @@
                                     <label class="form-label fw-semibold">Tanggal Registrasi</label>
                                     <div class="row g-2">
                                         <div class="col-6">
-                                            <input type="date" class="form-control" name="date_from">
+                                            <input type="date" class="form-control" name="date_from" value="{{ request('date_from') }}">
                                         </div>
                                         <div class="col-6">
-                                            <input type="date" class="form-control" name="date_to">
+                                            <input type="date" class="form-control" name="date_to" value="{{ request('date_to') }}">
                                         </div>
                                     </div>
                                 </div>
@@ -176,16 +171,16 @@
                                     <label class="form-label fw-semibold">Kode FAT</label>
                                     <select class="form-select" name="has_fat_code">
                                         <option value="">Semua</option>
-                                        <option value="yes">Ada FAT</option>
-                                        <option value="no">Tidak Ada FAT</option>
+                                        <option value="yes" {{ request('has_fat_code') == 'yes' ? 'selected' : '' }}>Ada FAT</option>
+                                        <option value="no" {{ request('has_fat_code') == 'no' ? 'selected' : '' }}>Tidak Ada FAT</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label fw-semibold">Koordinat</label>
                                     <select class="form-select" name="has_coordinates">
                                         <option value="">Semua</option>
-                                        <option value="yes">Ada Koordinat</option>
-                                        <option value="no">Tidak Ada Koordinat</option>
+                                        <option value="yes" {{ request('has_coordinates') == 'yes' ? 'selected' : '' }}>Ada Koordinat</option>
+                                        <option value="no" {{ request('has_coordinates') == 'no' ? 'selected' : '' }}>Tidak Ada Koordinat</option>
                                     </select>
                                 </div>
                                 <div class="col-md-12">
@@ -207,19 +202,18 @@
     </div>
 
     <!-- Quick Action Buttons -->
-    @if(isset($pelanggans) && $pelanggans->count() > 0)
+    @if(isset($pelanggans) && !empty($pelanggans) && (is_countable($pelanggans) ? count($pelanggans) > 0 : (method_exists($pelanggans, 'count') ? $pelanggans->count() > 0 : false)))
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="btn-group" role="group">
-                            <a href="{{ route('customer.map') }}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-map-marked-alt me-1"></i>Lihat di Peta
-                            </a>
-                        </div>
+                    <div class="d-flex justify-content-end align-items-center">
                         <small class="text-muted">
-                            Menampilkan {{ $pelanggans->firstItem() ?? 0 }}-{{ $pelanggans->lastItem() ?? 0 }} dari {{ $pelanggans->total() ?? 0 }} data
+                            @if(method_exists($pelanggans, 'firstItem'))
+                                Menampilkan {{ $pelanggans->firstItem() }}-{{ $pelanggans->lastItem() }} dari {{ $pelanggans->total() }} data
+                            @else
+                                Menampilkan {{ count($pelanggans) }} data
+                            @endif
                         </small>
                     </div>
                 </div>
@@ -229,14 +223,16 @@
     @endif
 
     <!-- Results Table -->
-    @if(isset($pelanggans) && $pelanggans->count() > 0)
+    @if(isset($pelanggans) && !empty($pelanggans) && (is_countable($pelanggans) ? count($pelanggans) > 0 : (method_exists($pelanggans, 'count') ? $pelanggans->count() > 0 : false)))
     <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
                         <i class="fas fa-table me-2"></i>Hasil Pencarian
-                        <span class="badge bg-primary ms-2">{{ $pelanggans->total() }}</span>
+                        <span class="badge bg-primary ms-2">
+                            {{ method_exists($pelanggans, 'total') ? $pelanggans->total() : (is_countable($pelanggans) ? count($pelanggans) : 0) }}
+                        </span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -248,7 +244,7 @@
                                     <th width="12%">ID Pelanggan</th>
                                     <th width="18%">Nama</th>
                                     <th width="8%">Bandwidth</th>
-                                    <th width="20%">Alamat</th>
+                                    <th width="25%">Alamat</th>
                                     <th width="12%">Telepon</th>
                                     <th width="10%">Cluster</th>
                                     <th width="10%">Kode FAT</th>
@@ -256,11 +252,15 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $startIndex = method_exists($pelanggans, 'firstItem') ? $pelanggans->firstItem() : 1;
+                                @endphp
+                                
                                 @foreach($pelanggans as $index => $pelanggan)
                                 <tr id="row-{{ $pelanggan->id }}">
-                                    <td>{{ $pelanggans->firstItem() + $index }}</td>
+                                    <td>{{ $startIndex + $index }}</td>
                                     <td>
-                                        <span class="fw-semibold text-primary">{{ $pelanggan->id_pelanggan }}</span>
+                                        <span class="fw-semibold text-primary">{{ $pelanggan->id_pelanggan ?? 'N/A' }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -268,28 +268,30 @@
                                                 <i class="fas fa-user text-white"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-semibold">{{ $pelanggan->nama_pelanggan }}</div>
-                                                <small class="text-muted">{{ $pelanggan->created_at->format('d M Y') }}</small>
+                                                <div class="fw-semibold">{{ $pelanggan->nama_pelanggan ?? 'N/A' }}</div>
+                                                <small class="text-muted">
+                                                    {{ isset($pelanggan->created_at) ? \Carbon\Carbon::parse($pelanggan->created_at)->format('d M Y') : 'N/A' }}
+                                                </small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ $pelanggan->bandwidth }}</span>
+                                        <span class="badge bg-info">{{ $pelanggan->bandwidth ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <small class="text-muted">{{ Str::limit($pelanggan->alamat, 40) }}</small>
-                                        @if($pelanggan->provinsi)
-                                            <br><small class="text-info">{{ $pelanggan->provinsi }}, {{ $pelanggan->kabupaten }}</small>
+                                        <small class="text-muted">{{ isset($pelanggan->alamat) ? Str::limit($pelanggan->alamat, 40) : 'N/A' }}</small>
+                                        @if(isset($pelanggan->provinsi) && $pelanggan->provinsi)
+                                            <br><small class="text-info">{{ $pelanggan->provinsi }}, {{ $pelanggan->kabupaten ?? '' }}</small>
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="fw-semibold">{{ $pelanggan->nomor_telepon }}</span>
+                                        <span class="fw-semibold">{{ $pelanggan->nomor_telepon ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ $pelanggan->cluster }}</span>
+                                        <span class="badge bg-secondary">{{ $pelanggan->cluster ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        @if($pelanggan->kode_fat)
+                                        @if(isset($pelanggan->kode_fat) && $pelanggan->kode_fat)
                                             <span class="badge bg-success">{{ $pelanggan->kode_fat }}</span>
                                         @else
                                             <span class="badge bg-warning">Tidak Ada</span>
@@ -300,18 +302,11 @@
                                             <a href="{{ route('customer.edit', $pelanggan->id) }}" class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-danger"
-                                                    onclick="deletePelanggan({{ $pelanggan->id }}, '{{ addslashes($pelanggan->nama_pelanggan) }}')"
+                                            <button type="button" class="btn btn-outline-danger" 
+                                                    onclick="deletePelanggan({{ $pelanggan->id }}, '{{ addslashes($pelanggan->nama_pelanggan ?? 'N/A') }}')" 
                                                     title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
-                                            @if($pelanggan->latitude && $pelanggan->longitude)
-                                            <button type="button" class="btn btn-outline-info"
-                                                    onclick="viewLocation({{ $pelanggan->latitude }}, {{ $pelanggan->longitude }}, '{{ addslashes($pelanggan->nama_pelanggan) }}')"
-                                                    title="Lihat Lokasi">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                            </button>
-                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -320,9 +315,11 @@
                         </table>
                     </div>
                 </div>
+                @if(method_exists($pelanggans, 'appends'))
                 <div class="card-footer bg-light">
                     {{ $pelanggans->appends(request()->query())->links() }}
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -331,7 +328,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-5">
-                    @if(request()->has('filter_query') || request()->has('filter_field'))
+                    @if(request()->hasAny(['filter_query', 'filter_field', 'advanced']))
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Tidak ada data yang ditemukan</h5>
                         <p class="text-muted">Coba ubah kata kunci pencarian atau filter yang digunakan</p>
@@ -399,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput && !searchInput.value) {
         searchInput.focus();
     }
-
+    
     // Pastikan ada CSRF token di meta tag
     if (!document.querySelector('meta[name="csrf-token"]')) {
         const metaTag = document.createElement('meta');
@@ -407,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
         metaTag.content = '{{ csrf_token() }}';
         document.head.appendChild(metaTag);
     }
-
+    
     // Setup delete confirmation modal
     const confirmDeleteBtn = document.getElementById('confirmDelete');
     if (confirmDeleteBtn) {
@@ -423,12 +420,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Check if advanced search should be shown
+    const hasAdvancedParams = {{ request()->has('advanced') || request()->has('cluster_filter') || request()->has('provinsi_filter') ? 'true' : 'false' }};
+    if (hasAdvancedParams) {
+        showAdvancedSearch();
+    }
 });
 
 function showBasicSearch() {
     document.getElementById('basicSearchForm').style.display = 'block';
     document.getElementById('advancedSearchForm').style.display = 'none';
-
+    
     // Update button states
     const buttons = document.querySelectorAll('.btn-group-sm .btn');
     buttons.forEach(btn => btn.classList.remove('active'));
@@ -438,17 +441,25 @@ function showBasicSearch() {
 function showAdvancedSearch() {
     document.getElementById('basicSearchForm').style.display = 'none';
     document.getElementById('advancedSearchForm').style.display = 'block';
-
+    
     // Update button states
     const buttons = document.querySelectorAll('.btn-group-sm .btn');
     buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // If called programmatically, find and activate the advanced button
+        const advancedBtn = document.querySelector('.btn-group-sm .btn-outline-info');
+        if (advancedBtn) {
+            advancedBtn.classList.add('active');
+        }
+    }
 }
 
 function deletePelanggan(id, nama) {
     currentDeleteId = id;
     document.getElementById('customerName').textContent = nama;
-
+    
     // Show modal
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
     deleteModal.show();
@@ -460,7 +471,7 @@ function performDelete(id) {
     const originalText = deleteBtn.innerHTML;
     deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menghapus...';
     deleteBtn.disabled = true;
-
+    
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (!csrfToken) {
@@ -468,16 +479,11 @@ function performDelete(id) {
         resetDeleteButton(deleteBtn, originalText);
         return;
     }
-
-<<<<<<< HEAD
-    // PERBAIKAN: Gunakan route Laravel yang benar
+    
+    // Use the correct delete URL format
     const deleteUrl = `/customer/${id}`;
-=======
-    // PERBAIKAN: URL yang benar sesuai dengan route Laravel
-    const deleteUrl = `/customer/search/${id}`;
->>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
-
-    // Kirim request delete via fetch
+    
+    // Send delete request via fetch
     fetch(deleteUrl, {
         method: 'DELETE',
         headers: {
@@ -489,37 +495,23 @@ function performDelete(id) {
     })
     .then(response => {
         console.log('Response status:', response.status);
-
-<<<<<<< HEAD
-        // Cek jika response tidak ok
-=======
->>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
+        
         if (!response.ok) {
-            // Coba parse error message dari response
-            return response.json().then(errorData => {
-                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-            }).catch(() => {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            });
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         return response.json();
     })
     .then(data => {
         console.log('Delete response:', data);
-
+        
         if (data.success) {
             showAlert(data.message || 'Data pelanggan berhasil dihapus!', 'success');
             // Remove row from table instead of full reload for better UX
             const row = document.getElementById('row-' + id);
             if (row) {
-                // Animate row removal
-                row.style.transition = 'opacity 0.3s ease';
-                row.style.opacity = '0';
-                setTimeout(() => {
-                    row.remove();
-                    updateRowNumbers();
-                    updateTotalCount();
-                }, 300);
+                row.remove();
+                updateRowNumbers();
+                updateTotalCount();
             }
         } else {
             throw new Error(data.message || 'Gagal menghapus data');
@@ -544,13 +536,8 @@ function updateRowNumbers() {
     rows.forEach((row, index) => {
         const firstCell = row.querySelector('td');
         if (firstCell) {
-            @if(isset($pelanggans))
-            const currentPage = {{ $pelanggans->currentPage() ?? 1 }};
-            const perPage = {{ $pelanggans->perPage() ?? 15 }};
-            @else
-            const currentPage = 1;
-            const perPage = 15;
-            @endif
+            const currentPage = {{ isset($pelanggans) && method_exists($pelanggans, 'currentPage') ? $pelanggans->currentPage() : 1 }};
+            const perPage = {{ isset($pelanggans) && method_exists($pelanggans, 'perPage') ? $pelanggans->perPage() : 10 }};
             const newNumber = ((currentPage - 1) * perPage) + index + 1;
             firstCell.textContent = newNumber;
         }
@@ -564,14 +551,14 @@ function updateTotalCount() {
         const currentTotal = parseInt(totalBadge.textContent) - 1;
         totalBadge.textContent = currentTotal;
     }
-
+    
     // Update header total
     const headerTotal = document.querySelector('.text-end h5');
     if (headerTotal) {
         const currentHeaderTotal = parseInt(headerTotal.textContent) - 1;
         headerTotal.textContent = currentHeaderTotal;
     }
-
+    
     // If no more rows, show empty state
     if (remainingRows === 0) {
         setTimeout(() => {
@@ -584,75 +571,43 @@ function showAlert(message, type = 'success') {
     // Remove existing alerts
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => alert.remove());
-
+    
     // Create new alert
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-
+    
     const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        <div class="${alertClass} alert-dismissible fade show" role="alert">
             <i class="fas ${icon} me-2"></i>${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-
+    
     // Insert after header section
     const headerSection = document.querySelector('.container-fluid .row.mb-4');
     if (headerSection) {
         headerSection.insertAdjacentHTML('afterend', alertHtml);
-
+        
         // Auto dismiss after 5 seconds
         setTimeout(() => {
-            const alert = document.querySelector(.alert.${alertClass});
+            const alert = document.querySelector(`.alert.${alertClass}`);
             if (alert) {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
             }
         }, 5000);
-
+        
         // Scroll to alert
-        const alert = document.querySelector(.alert.${alertClass});
+        const alert = document.querySelector(`.alert.${alertClass}`);
         if (alert) {
             alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
 }
 
-function viewLocation(lat, lng, nama) {
-    if (!lat || !lng) {
-        showAlert('Koordinat tidak tersedia untuk pelanggan ini', 'error');
-        return;
-    }
-
-    // Buka Google Maps di tab baru
-    const url = https://www.google.com/maps?q=${lat},${lng}&z=15&t=m&hl=id;
-    const mapWindow = window.open(url, '_blank');
-
-    // Cek jika popup diblokir browser
-    if (!mapWindow || mapWindow.closed || typeof mapWindow.closed == 'undefined') {
-        const coordText = ${lat}, ${lng};
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(coordText).then(() => {
-                showAlert(Popup diblokir! Koordinat ${coordText} telah disalin ke clipboard. Paste di Google Maps secara manual., 'error');
-            }).catch(() => {
-                showAlert(Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps., 'error');
-            });
-        } else {
-            showAlert(Popup diblokir! Koordinat: ${coordText}. Salin manual ke Google Maps., 'error');
-        }
-    }
-}
-
 function showAllData() {
-    // Submit form tanpa filter untuk menampilkan semua data
-    const form = document.querySelector('#basicSearchForm form');
-    const filterField = form.querySelector('[name="filter_field"]');
-    const filterQuery = form.querySelector('[name="filter_query"]');
-
-    filterField.value = '';
-    filterQuery.value = '';
-
-    form.submit();
+    // Redirect to search page without any filters to show all data
+    window.location.href = '{{ route("customer.search") }}?show_all=1';
 }
 </script>
 @endpush

@@ -6,9 +6,31 @@ use App\Models\Pelanggan;
 use App\Models\Competitor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class OperationalReportController extends Controller
 {
+    // ✳ : generator ID harian: IP + yymmdd + 2 digit urut per hari
+    private function generateNextCustomerId(): string
+    {
+        $today = Carbon::now('Asia/Makassar')->format('ymd'); // 250904
+        $prefix = 'IP' . $today;                              // IP250904
+
+        // Ambil ID terakhir untuk hari ini lalu increment 2 digit di belakang
+        $lastIdToday = Pelanggan::where('id_pelanggan', 'like', $prefix.'%')
+            ->orderBy('id_pelanggan', 'desc')
+            ->value('id_pelanggan');
+
+        $seq = 0;
+        if ($lastIdToday) {
+            // Ambil 2 digit paling belakang sebagai urutan
+            $seq = (int)substr($lastIdToday, strlen($prefix)); // contoh '01' -> 1
+        }
+
+        $nextSeq = str_pad((string)($seq + 1), 2, '0', STR_PAD_LEFT); // 01, 02, ...
+        return $prefix . $nextSeq; // contoh: IP25090401
+    }
+
     // Data provinsi dan kabupaten Indonesia Timur
     private function getRegionData()
     {
@@ -63,14 +85,34 @@ class OperationalReportController extends Controller
 
     public function index()
     {
+    // Ambil semua data pelanggan untuk ditampilkan di tabel
+    $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
 
-        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
-        $regionData = $this->getRegionData();
-        $pakets = Competitor::select('paket')->distinct()->pluck('paket');
-        return view('report.operational.index', compact('pelanggans', 'regionData', 'pakets'));
+    // Ambil data paket & region (sesuai yang kamu pakai di blade)
+    $pakets = Competitor::select('paket')->distinct()->get();
+    $regionData = $this->getRegionData();
+
+        // $lastId = Pelanggan::max('id_pelanggan');              // ❌ hapus cara lama (angka)
+        // $nextId = $lastId ? $lastId + 1 : 1;                   // ❌ hapus
+
+        $nextId = $this->generateNextCustomerId();               // ✳ ADD: preview ID format baru
+
+        return view('report.operational.index', compact('pelanggans', 'pakets', 'regionData', 'nextId'));
     }
 
     // API untuk mendapatkan kabupaten berdasarkan provinsi - DENGAN DEBUGGING
+    // ⬇ Tambahkan method create() di sini
+    public function create()
+    {
+    $nextId = $this->generateNextCustomerId(); // ✅ langsung panggil fungsi generator
+
+    // Ambil data tambahan untuk form (jika dibutuhkan)
+    $regionData = $this->getRegionData();
+    $pakets = Competitor::select('paket')->distinct()->pluck('paket');
+
+    // arahkan ke view form create
+    return view('report.operational.create', compact('nextId', 'regionData', 'pakets'));
+}
     public function getKabupaten(Request $request)
     {
         try {
@@ -217,19 +259,7 @@ class OperationalReportController extends Controller
     // Method untuk mendapatkan kecepatan berdasarkan cluster via AJAX
     public function getKecepatanByBandwidth(Request $request)
     {
-<<<<<<< HEAD
-        $cluster = $request->get('cluster');
-
-        $kecepatan = Competitor::where('cluster', $cluster)
-                              ->select('kecepatan')
-                              ->distinct()
-                              ->whereNotNull('kecepatan')
-                              ->pluck('kecepatan');
-
-        return response()->json($kecepatan);
-=======
         $kecepatan = $request->get('kecepatan');
->>>>>>> ae171d0e20c91b17be4560c4cb10c5e772cf2184
 
         $paket = Competitor::where('kecepatan', $kecepatan)
                         ->select('speed')
@@ -242,8 +272,8 @@ class OperationalReportController extends Controller
 
     public function store(Request $request)
     {
+        
         $validated = $request->validate([
-            'id_pelanggan'   => 'required|string|max:100|unique:pelanggans,id_pelanggan',
             'nama_pelanggan' => 'required|string|max:255',
             'bandwidth'      => 'required|string|max:100',
             'alamat'         => 'required|string',
@@ -255,6 +285,8 @@ class OperationalReportController extends Controller
             'cluster'        => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
         ]);
+
+        $validated['id_pelanggan'] = $this->generateNextCustomerId();
 
         // Otomatis isi kecepatan sama dengan bandwidth pelanggan
         $validated['kecepatan'] = [$validated['bandwidth']];
