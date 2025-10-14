@@ -11,6 +11,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerSearchController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\ExportCompetitorController;
+
 
 // ================== ROOT REDIRECT ================== //
 Route::get('/', function () {

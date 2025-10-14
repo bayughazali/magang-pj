@@ -11,6 +11,19 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ExportController extends Controller
 {
     /**
+ * Display activity report page
+ */
+public function activityView()
+{
+    // Ambil data activity dari database
+    // (pastikan kamu sudah punya model Activity)
+    $activities = \App\Models\ReportActivity::orderBy('tanggal', 'desc')->paginate(10);
+
+   return view('export.activity', compact('activities'));
+
+}
+
+    /**
      * Display the export page
      */
     public function index()
