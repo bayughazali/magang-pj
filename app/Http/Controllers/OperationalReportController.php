@@ -7,6 +7,7 @@ use App\Models\Competitor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class OperationalReportController extends Controller
 {

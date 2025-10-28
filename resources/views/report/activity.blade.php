@@ -128,7 +128,7 @@
                                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
                                             <span style="display: none; color: #dc3545;">❌ Error</span>
                                         @elseif($report->evidence)
-                                            <span class="text-warning" title="File tidak ditemukan">⚠️ Missing</span>
+                                            <span class="text-warning" title="File tidak ditemukan">⚠ Missing</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -281,4 +281,6 @@ function showImage(src) {
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 </script>
+
 @endsection
+

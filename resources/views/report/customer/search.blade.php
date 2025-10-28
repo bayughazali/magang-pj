@@ -2,25 +2,15 @@
 
 @section('content')
 <div class="container-fluid mt-4">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-search fa-2x me-3"></i>
-                            <div>
-                                <h4 class="mb-1">Cari Pelanggan & Kode FAT</h4>
-                                <p class="mb-0 opacity-75">Pencarian data pelanggan berdasarkan berbagai kriteria</p>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <h5 class="mb-0">{{ isset($pelanggans) && !empty($pelanggans) ? (is_countable($pelanggans) ? count($pelanggans) : (method_exists($pelanggans, 'total') ? $pelanggans->total() : 0)) : 0 }}</h5>
-                            <small class="opacity-75">Total Data</small>
-                        </div>
-                    </div>
-                </div>
+
+    <!-- Header Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h4 class="fw-bold mb-1 text-primary">
+                    <i class="fas fa-users me-2"></i> Cari Pelanggan & Kode FAT
+                </h4>
+                <p class="text-muted mb-0">Pencarian data pelanggan berdasarkan berbagai kriteria</p>
             </div>
         </div>
     </div>
@@ -40,188 +30,86 @@
         </div>
     @endif
 
-    <!-- Search Form -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                            <i class="fas fa-filter me-2"></i>Filter Pencarian
-                        </h6>
-                        <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary active" onclick="showBasicSearch()">
-                                <i class="fas fa-search me-1"></i>Basic
-                            </button>
-                            <button type="button" class="btn btn-outline-info" onclick="showAdvancedSearch()">
-                                <i class="fas fa-sliders-h me-1"></i>Advanced
-                            </button>
-                        </div>
-                    </div>
+    <!-- Form Pencarian -->
+    <!-- <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('customer.search') }}" class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control"
+                           placeholder="Cari berdasarkan ID, Nama, Telepon, atau Kode FAT...">
                 </div>
-                <div class="card-body">
-                    <!-- Basic Search Form -->
-                    <div id="basicSearchForm">
-                        <form method="GET" action="{{ route('customer.search') }}">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label for="filter_field" class="form-label fw-semibold">Filter Field</label>
-                                    <select class="form-select" id="filter_field" name="filter_field">
-                                        <option value="">Semua Field</option>
-                                        <option value="id_pelanggan" {{ request('filter_field') == 'id_pelanggan' ? 'selected' : '' }}>ID Pelanggan</option>
-                                        <option value="nama_pelanggan" {{ request('filter_field') == 'nama_pelanggan' ? 'selected' : '' }}>Nama Pelanggan</option>
-                                        <option value="bandwidth" {{ request('filter_field') == 'bandwidth' ? 'selected' : '' }}>Bandwidth</option>
-                                        <option value="alamat" {{ request('filter_field') == 'alamat' ? 'selected' : '' }}>Alamat</option>
-                                        <option value="provinsi" {{ request('filter_field') == 'provinsi' ? 'selected' : '' }}>Provinsi</option>
-                                        <option value="kabupaten" {{ request('filter_field') == 'kabupaten' ? 'selected' : '' }}>Kabupaten</option>
-                                        <option value="nomor_telepon" {{ request('filter_field') == 'nomor_telepon' ? 'selected' : '' }}>Nomor Telepon</option>
-                                        <option value="cluster" {{ request('filter_field') == 'cluster' ? 'selected' : '' }}>Cluster</option>
-                                        <option value="kode_fat" {{ request('filter_field') == 'kode_fat' ? 'selected' : '' }}>Kode FAT</option>
-                                        <option value="latitude" {{ request('filter_field') == 'latitude' ? 'selected' : '' }}>Latitude</option>
-                                        <option value="longitude" {{ request('filter_field') == 'longitude' ? 'selected' : '' }}>Longitude</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="filter_query" class="form-label fw-semibold">Kata Kunci</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-search"></i>
-                                        </span>
-                                        <input type="text" class="form-control" id="filter_query" name="filter_query"
-                                               placeholder="Masukkan kata kunci pencarian..."
-                                               value="{{ request('filter_query') ?? '' }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label d-block">&nbsp;</label>
-                                    <div class="btn-group w-100">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search me-1"></i>Cari
-                                        </button>
-                                        <a href="{{ route('customer.search') }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-times me-1"></i>Reset
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                <div class="col-md-3">
+                    <select name="provinsi" class="form-select">
+                        <option value="">Semua Provinsi</option>
+                        @foreach($provinsiList as $prov)
+                            <option value="{{ $prov }}" {{ request('provinsi') == $prov ? 'selected' : '' }}>
+                                {{ strtoupper($prov) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="cluster" class="form-select">
+                        <option value="">Semua Cluster</option>
+                        @foreach($clusters as $cluster)
+                            <option value="{{ $cluster }}" {{ request('cluster') == $cluster ? 'selected' : '' }}>
+                                {{ strtoupper($cluster) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div> 
+                <div class="col-md-2 text-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div> -->
 
-                    <!-- Advanced Search Form (Hidden by default) -->
-                    <div id="advancedSearchForm" style="display: none;">
-                        <form method="GET" action="{{ route('customer.search') }}">
-                            <input type="hidden" name="advanced" value="1">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Cluster</label>
-                                    <select class="form-select" name="cluster_filter">
-                                        <option value="">Semua Cluster</option>
-                                        @if(isset($clusters) && !empty($clusters))
-                                            @foreach($clusters as $cluster)
-                                                <option value="{{ $cluster }}" {{ request('cluster_filter') == $cluster ? 'selected' : '' }}>{{ $cluster }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Provinsi</label>
-                                    <select class="form-select" name="provinsi_filter">
-                                        <option value="">Semua Provinsi</option>
-                                        @if(isset($provinsis) && !empty($provinsis))
-                                            @foreach($provinsis as $provinsi)
-                                                <option value="{{ $provinsi }}" {{ request('provinsi_filter') == $provinsi ? 'selected' : '' }}>{{ $provinsi }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Kabupaten</label>
-                                    <select class="form-select" name="kabupaten_filter">
-                                        <option value="">Semua Kabupaten</option>
-                                        @if(isset($kabupatens) && !empty($kabupatens))
-                                            @foreach($kabupatens as $kabupaten)
-                                                <option value="{{ $kabupaten }}" {{ request('kabupaten_filter') == $kabupaten ? 'selected' : '' }}>{{ $kabupaten }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Range Bandwidth</label>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <input type="number" class="form-control" name="bandwidth_min" placeholder="Min" value="{{ request('bandwidth_min') }}">
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="number" class="form-control" name="bandwidth_max" placeholder="Max" value="{{ request('bandwidth_max') }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Tanggal Registrasi</label>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <input type="date" class="form-control" name="date_from" value="{{ request('date_from') }}">
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="date" class="form-control" name="date_to" value="{{ request('date_to') }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Kode FAT</label>
-                                    <select class="form-select" name="has_fat_code">
-                                        <option value="">Semua</option>
-                                        <option value="yes" {{ request('has_fat_code') == 'yes' ? 'selected' : '' }}>Ada FAT</option>
-                                        <option value="no" {{ request('has_fat_code') == 'no' ? 'selected' : '' }}>Tidak Ada FAT</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Koordinat</label>
-                                    <select class="form-select" name="has_coordinates">
-                                        <option value="">Semua</option>
-                                        <option value="yes" {{ request('has_coordinates') == 'yes' ? 'selected' : '' }}>Ada Koordinat</option>
-                                        <option value="no" {{ request('has_coordinates') == 'no' ? 'selected' : '' }}>Tidak Ada Koordinat</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="btn-group">
-                                        <button type="submit" class="btn btn-info">
-                                            <i class="fas fa-filter me-1"></i>Advanced Search
-                                        </button>
-                                        <a href="{{ route('customer.search') }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-times me-1"></i>Reset
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+    <!-- Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form id="form-search" class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <input type="text" name="search" class="form-control form-control-lg shadow-sm border-0"
+                        placeholder="Cari berdasarkan ID, Nama, Telepon, atau Kode FAT...">
                 </div>
-            </div>
+
+                <div class="col-md-3">
+                    <select name="provinsi" class="form-select form-select-lg shadow-sm border-0">
+                        <option value="">🌍 Semua Provinsi</option>
+                        <option value="BALI">BALI</option>
+                        <option value="NUSA TENGGARA BARAT">NUSA TENGGARA BARAT</option>
+                        <option value="NUSA TENGGARA TIMUR">NUSA TENGGARA TIMUR</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="cluster" class="form-select form-select-lg shadow-sm border-0">
+                        <option value="">🏷️ Semua Cluster</option>
+                        <option value="CLUSTER A">CLUSTER A</option>
+                        <option value="CLUSTER B">CLUSTER B</option>
+                        <option value="CLUSTER C">CLUSTER C</option>
+                        <option value="CLUSTER D">CLUSTER D</option>
+                    </select>
+                </div>
+
+                <div class="col-md-1 text-center">
+                    <button id="btn-cari" class="btn btn-lg btn-primary w-100 shadow-sm">
+                        <i class="fas fa-search me-2"></i>Cari
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <!-- Quick Action Buttons -->
-    @if(isset($pelanggans) && !empty($pelanggans) && (is_countable($pelanggans) ? count($pelanggans) > 0 : (method_exists($pelanggans, 'count') ? $pelanggans->count() > 0 : false)))
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-end align-items-center">
-                        <small class="text-muted">
-                            @if(method_exists($pelanggans, 'firstItem'))
-                                Menampilkan {{ $pelanggans->firstItem() }}-{{ $pelanggans->lastItem() }} dari {{ $pelanggans->total() }} data
-                            @else
-                                Menampilkan {{ count($pelanggans) }} data
-                            @endif
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
+    
+                    <div class="alert alert-success shadow-sm" role="alert">
+        <strong><i class="fas fa-database"></i> Data Pelanggan Tersimpan</strong><br>
+        <span>Daftar pelanggan yang telah diinput ke sistem</span>
     </div>
-    @endif
 
+    
     <!-- Results Table -->
     @if(isset($pelanggans) && !empty($pelanggans) && (is_countable($pelanggans) ? count($pelanggans) > 0 : (method_exists($pelanggans, 'count') ? $pelanggans->count() > 0 : false)))
     <div class="row">
@@ -316,26 +204,6 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center py-5">
-                    @if(request()->hasAny(['filter_query', 'filter_field', 'advanced']))
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Tidak ada data yang ditemukan</h5>
-                        <p class="text-muted">Coba ubah kata kunci pencarian atau filter yang digunakan</p>
-                        <a href="{{ route('customer.search') }}" class="btn btn-primary">
-                            <i class="fas fa-refresh me-1"></i>Cari Lagi
-                        </a>
-                    @else
-                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
-                        <h5>Pencarian Pelanggan & Kode FAT</h5>
-                        <p class="text-muted">Gunakan form pencarian di atas untuk mencari data pelanggan</p>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-outline-primary" onclick="showAllData()">
-                                <i class="fas fa-list me-1"></i>Lihat Semua Data
-                            </button>
-                            <button type="button" class="btn btn-outline-info" onclick="showAdvancedSearch()">
-                                <i class="fas fa-sliders-h me-1"></i>Advanced Search
-                            </button>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -343,7 +211,27 @@
     @endif
 </div>
 
-<!-- Modal Konfirmasi Delete -->
+<!-- Quick Action Buttons -->
+    @if(isset($pelanggans) && !empty($pelanggans) && (is_countable($pelanggans) ? count($pelanggans) > 0 : (method_exists($pelanggans, 'count') ? $pelanggans->count() > 0 : false)))
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <small class="text-muted">
+                            @if(method_exists($pelanggans, 'firstItem'))
+                                Menampilkan {{ $pelanggans->firstItem() }}-{{ $pelanggans->lastItem() }} dari {{ $pelanggans->total() }} data
+                            @else
+                                Menampilkan {{ count($pelanggans) }} data
+                            @endif
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+    
 <!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -466,8 +354,6 @@ function deletePelanggan(id, nama) {
         .then(data => location.reload());
     });
 </script>
-
-
 
 @endsection
 

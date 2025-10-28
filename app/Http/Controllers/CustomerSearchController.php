@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CustomerSearchController extends Controller
 {
@@ -18,23 +19,13 @@ class CustomerSearchController extends Controller
      */
    public function index(Request $request)
 {
-    $query = Pelanggan::query();
+    // 🔹 1. Buat query awal
+    $query = \App\Models\Pelanggan::query();
 
-    if ($request->filled('cluster')) {
-        $query->where('cluster', $request->cluster);
-    }
-
-    if ($request->filled('provinsi')) {
-        $query->where('provinsi', $request->provinsi);
-    }
-
-    if ($request->filled('kabupaten')) {
-        $query->where('kabupaten', $request->kabupaten);
-    }
-
+    // 🔹 2. Jika ada input pencarian (tetap difilter)
     if ($request->filled('search')) {
         $search = $request->search;
-        $query->where(function($q) use ($search) {
+        $query->where(function ($q) use ($search) {
             $q->where('id_pelanggan', 'like', "%{$search}%")
               ->orWhere('nama_pelanggan', 'like', "%{$search}%")
               ->orWhere('nomor_telepon', 'like', "%{$search}%")
@@ -42,30 +33,35 @@ class CustomerSearchController extends Controller
         });
     }
 
+    // 🔹 3. Jika tidak ada pencarian sama sekali, tampilkan semua data pelanggan
+    //     Inilah bagian penting agar tabel muncul otomatis
     $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
 
-    $clusters = Pelanggan::select('cluster')
-        ->distinct()
-        ->whereNotNull('cluster')
-        ->orderBy('cluster')
-        ->pluck('cluster');
+    // 🔹 4. Data tambahan dropdown (optional)
+    $clusters = \App\Models\Pelanggan::select('cluster')->distinct()->pluck('cluster');
+    $provinsiList = \App\Models\Pelanggan::select('provinsi')->distinct()->pluck('provinsi');
 
-    $provinsiList = Pelanggan::select('provinsi')
-        ->distinct()
-        ->whereNotNull('provinsi')
-        ->orderBy('provinsi')
-        ->pluck('provinsi');
+// Filter berdasarkan Provinsi
+    if ($request->filled('provinsi')) {
+        $query->where('provinsi', strtoupper($request->provinsi));
+    }
 
-    // ✅ Tambahkan regionData
-    $regionData = $this->getRegionData();
+    // Filter berdasarkan Cluster
+    if ($request->filled('cluster')) {
+        $query->where('cluster', strtoupper($request->cluster));
+    }
 
-    // ✅ Kembalikan ke halaman index data pelanggan
-    return view('report.operational.index', compact(
-        'pelanggans', 'clusters', 'provinsiList', 'regionData'
-    ));
+    // Ambil data hasil pencarian
+    $pelanggans = $query->paginate(10);
+
+    // Data dropdown
+    $provinsiList = ['BALI', 'NUSA TENGGARA BARAT', 'NUSA TENGGARA TIMUR'];
+    $clusters = ['CLUSTER A', 'CLUSTER B', 'CLUSTER C', 'CLUSTER D'];
+    
+
+    // kirim ke view
+    return view('report.customer.search', compact('pelanggans', 'provinsiList', 'clusters'));
 }
-
-
 
     /**
      * Simpan data pelanggan baru

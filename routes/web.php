@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuthController;
@@ -100,9 +102,11 @@ Route::middleware('auth')->group(function () {
     });
 
     // ================== CUSTOMER ROUTES ================== //
-    Route::get('/report/customer/search', function() {
-        return view('report.customer.search');
-    })->name('report.customer.search');
+    
+
+    Route::get('/report/customer/search', [App\Http\Controllers\CustomerSearchController::class, 'index'])
+    ->name('report.customer.search');
+
 
     Route::prefix('customer')->name('customer.')->group(function () {
         // Search customer routes
