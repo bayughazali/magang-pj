@@ -1,109 +1,116 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="container-fluid py-4">
 
-<!-- Header Card -->
-<div class="header bg-gradient-primary pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Export Report Activity</h6>
+  <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+    <!-- HEADER -->
+    <div class="card-header text-white py-3" style="background-color: #009FE3;"> {{-- biru PLN --}}
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0 fw-bold text-white">
+            <i class="fas fa-clipboard-list me-2 text-white"></i> Report Activity
+          </h5>
+          <small class="text-light opacity-75">Daftar aktivitas harian dan hasil kerja lapangan</small>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{{ route('export.activity.pdf') }}" class="btn btn-sm btn-danger">
-            <i class="fas fa-file-pdf"></i> Export PDF
+
+        <!-- EXPORT BUTTONS -->
+        <div class="d-flex gap-2">
+          <a href="{{ route('export.activity.pdf') }}" 
+             class="btn btn-sm fw-semibold text-white shadow-sm"
+             style="background-color: #E74C3C; border: none; transition: all 0.3s ease;">
+             <i class="fas fa-file-pdf me-1 text-white"></i> PDF
           </a>
-          <a href="{{ route('export.activity.csv') }}" class="btn btn-sm btn-success">
-            <i class="fas fa-file-csv"></i> Export CSV
+
+          <a href="{{ route('export.activity.csv') }}" 
+             class="btn btn-sm fw-semibold text-white shadow-sm"
+             style="background-color: #27AE60; border: none; transition: all 0.3s ease;">
+             <i class="fas fa-file-csv me-1 text-white"></i> CSV
           </a>
-          <a href="{{ route('export.activity.excel') }}" class="btn btn-sm btn-primary">
-            <i class="fas fa-file-excel"></i> Export Excel
+
+          <a href="{{ route('export.activity.excel') }}" 
+             class="btn btn-sm fw-semibold text-white shadow-sm"
+             style="background-color: #2980B9; border: none; transition: all 0.3s ease;">
+             <i class="fas fa-file-excel me-1 text-white"></i> Excel
           </a>
         </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="card-body" style="background-color: #F6FBFF;"> {{-- biru sangat muda --}}
+      <div class="table-responsive rounded-3 shadow-sm bg-white p-3">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="text-white text-center" style="background-color: #009FE3;"> {{-- biru PLN --}}
+            <tr>
+              <th>No</th>
+              <th>Sales</th>
+              <th>Aktivitas</th>
+              <th>Tanggal</th>
+              <th>Lokasi</th>
+              <th>Cluster</th>
+              <th>Evidence</th>
+              <th>Hasil / Kendala</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody class="text-center">
+            @forelse($activities as $i => $activity)
+              <tr class="hover-row">
+                <td>{{ $i + 1 }}</td>
+                <td class="fw-semibold text-dark">{{ $activity->sales }}</td>
+                <td><span class="badge bg-primary text-white">{{ $activity->aktivitas }}</span></td>
+                <td>{{ \Carbon\Carbon::parse($activity->tanggal)->format('d/m/Y') }}</td>
+                <td>{{ ucfirst($activity->lokasi) }}</td>
+                <td><span class="badge bg-info text-white">{{ $activity->cluster }}</span></td>
+                <td>
+                  @if($activity->evidence)
+                    <img src="{{ asset('storage/' . $activity->evidence) }}" 
+                         alt="evidence" 
+                         class="img-thumbnail shadow-sm"
+                         style="max-height:60px; border-radius:8px;">
+                  @else
+                    <span class="text-muted">No Image</span>
+                  @endif
+                </td>
+                <td>{{ $activity->hasil_kendala ?? '-' }}</td>
+                <td>
+                  @if($activity->status == 'selesai')
+                    <span class="badge bg-success text-white">Selesai</span>
+                  @else
+                    <span class="badge bg-warning text-dark">{{ ucfirst($activity->status) }}</span>
+                  @endif
+                </td>
+              </tr>
+            @empty
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  <i class="fas fa-database fa-3x mb-3 text-primary"></i><br>
+                  Tidak ada data activity yang tersedia.
+                </td>
+              </tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-3">
+        {{ $activities->links('pagination::bootstrap-5') }}
       </div>
     </div>
   </div>
 </div>
 
-<!-- Page Content -->
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-xl-12">
-      <div class="card shadow">
-        <!-- Card header -->
-        <div class="card-header bg-gradient-info border-0 d-flex align-items-center justify-content-between">
-          <h3 class="mb-0 text-white">
-            <i class="fas fa-clipboard-list mr-2"></i> Daftar Report Activity
-          </h3>
-        </div>
+<!-- STYLE TAMBAHAN -->
+<style>
+  .btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+  }
 
-        <!-- Table -->
-        <div class="table-responsive">
-          <table class="table align-items-center table-flush table-hover">
-            <thead class="thead-dark text-center">
-  <tr>
-    <th scope="col">No</th>
-    <th scope="col">Sales</th>
-    <th scope="col">Aktivitas</th>
-    <th scope="col">Tanggal</th>
-    <th scope="col">Lokasi</th>
-    <th scope="col">Cluster</th>
-    <th scope="col">Evidence</th>
-    <th scope="col">Hasil / Kendala</th>
-    <th scope="col">Status</th>
-  </tr>
-</thead>
-<tbody class="text-center">
-  @forelse($activities as $i => $activity)
-  <tr>
-    <td>{{ $i+1 }}</td>
-    <td><strong>{{ $activity->sales }}</strong></td>
-    <td>
-      <span class="badge badge-pill badge-primary">
-        {{ $activity->aktivitas }}
-      </span>
-    </td>
-    <td>{{ \Carbon\Carbon::parse($activity->tanggal)->format('d/m/Y') }}</td>
-    <td>{{ ucfirst($activity->lokasi) }}</td>
-    <td>
-      <span class="badge badge-pill badge-info">{{ $activity->cluster }}</span>
-    </td>
-    <td>
-      @if($activity->evidence)
-      <img src="{{ asset('storage/'.$activity->evidence) }}"
-           alt="evidence"
-           class="img-thumbnail shadow-sm"
-           style="max-height:60px; border-radius:8px">
-      @else
-      <span class="text-muted">No Image</span>
-      @endif
-    </td>
-    <td>{{ $activity->hasil_kendala ?? '-' }}</td>
-    <td>
-      @if($activity->status == 'selesai')
-        <span class="badge badge-success">Selesai</span>
-      @else
-        <span class="badge badge-warning">{{ ucfirst($activity->status) }}</span>
-      @endif
-    </td>
-  </tr>
-  @empty
-  <tr>
-    <td colspan="9" class="text-center text-muted">Tidak ada data activity</td>
-  </tr>
-  @endforelse
-</tbody>
-          </table>
-        </div>
-
-        <!-- Card footer -->
-        <div class="card-footer py-4">
-          {{ $activities->links() }}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+  .hover-row:hover {
+      background-color: #E3F2FD !important; /* biru muda lembut */
+      transition: 0.2s ease;
+  }
+</style>
 @endsection

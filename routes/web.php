@@ -264,15 +264,6 @@ Route::delete('/report/operational/destroy/{id}', [OperationalReportController::
 Route::get('/report/operational/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('report.operational.get-kabupaten');
 Route::get('/report/operational/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('report.operational.get-kode-fat');
 
-
-
-
-
-
-
-
-
-
 Route::get('/get-kabupaten', [App\Http\Controllers\OperationalReportController::class, 'getKabupaten']);
 Route::get('/get-kode-fat', [App\Http\Controllers\OperationalReportController::class, 'getKodeFat']);
 Route::get('/api/kecepatan-by-bandwidth', [OperationalReportController::class, 'getKecepatanByBandwidth']);
@@ -284,30 +275,34 @@ Route::get('/operational-report', [OperationalReportController::class, 'index'])
 Route::get('/get-kecepatan', [OperationalReportController::class, 'getKecepatan'])->name('get.kecepatan');
 
 
-// Export routes group dengan middleware auth
-Route::middleware(['auth'])->group(function () {
+// ================== EXPORT ROUTES ================== //
+Route::prefix('export')->middleware(['auth'])->group(function () {
 
-    // Export main page
-    Route::get('/export', [ExportController::class, 'index'])
-        ->name('export.index');
+    // ================== ACTIVITY EXPORT ================== //
+    Route::get('/activity', [ExportController::class, 'activityView'])->name('export.activity');
+    Route::get('/activity/pdf', [ExportController::class, 'exportActivityPdf'])->name('export.activity.pdf');
+    Route::get('/activity/csv', [ExportController::class, 'exportActivityCsv'])->name('export.activity.csv');
+    Route::get('/activity/excel', [ExportActivityController::class, 'exportExcel'])->name('export.activity.excel');
 
-    // Export preview with filters
-    Route::get('/export/preview', [ExportController::class, 'preview'])
-        ->name('export.preview');
+    // ================== COMPETITOR EXPORT ================== //
+    Route::get('/competitor', [ExportCompetitorController::class, 'index'])->name('export.competitor');
+    Route::get('/competitor/pdf', [ExportCompetitorController::class, 'exportPdf'])->name('export.competitor.pdf');
+    Route::get('/competitor/csv', [ExportCompetitorController::class, 'exportCsv'])->name('export.competitor.csv');
+    Route::get('/competitor/excel', [ExportCompetitorController::class, 'exportExcel'])->name('export.competitor.excel');
 
-    // Export to CSV
-    Route::get('/export/csv', [ExportController::class, 'exportCsv'])
-        ->name('export.csv');
-
-    // Export to PDF
-    Route::get('/export/pdf', [ExportController::class, 'exportPdf'])
-        ->name('export.pdf');
-
-    // Get available roles for filter dropdown
-    Route::get('/export/roles', [ExportController::class, 'getRoles'])
-        ->name('export.roles');
+    // ================== OPERATIONAL EXPORT ================== //
+    Route::get('/operational', [ExportController::class, 'operationalView'])->name('export.operational');
+    Route::get('/operational/pdf', [ExportController::class, 'exportOperationalPdf'])->name('export.operational.pdf');
+    Route::get('/operational/csv', [ExportController::class, 'exportOperationalCsv'])->name('export.operational.csv');
+    Route::get('/operational/excel', [ExportController::class, 'exportOperationalExcel'])->name('export.operational.excel'); // ✅ route yang hilang ditambahkan di sini
+    Route::get('/export/operational', [ExportController::class, 'operationalView'])->name('export.operational');
+    // Export Operational
+    Route::get('/export/operational/pdf', [App\Http\Controllers\ExportController::class, 'exportOperationalPdf'])->name('export.operational.pdf');
+    Route::get('/export/operational/csv', [App\Http\Controllers\ExportController::class, 'exportOperationalCsv'])->name('export.operational.csv');
+    Route::get('/export/operational/excel', [App\Http\Controllers\ExportController::class, 'exportOperationalExcel'])->name('export.operational.excel');
 
 });
+
 
 // Jika Anda memerlukan routes tambahan untuk admin, uncomment di bawah ini:
 /*
