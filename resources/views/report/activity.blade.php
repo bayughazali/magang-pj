@@ -90,7 +90,9 @@
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <span>Daftar Report Activity ({{ count($reports) }} data)</span>
-                <a href="{{ route('reports.exportPdf') }}" class=></a>
+                    {{-- <a href="{{ route('reports.exportPdf') }}" class="btn btn-sm btn-light">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </a> --}}
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -106,7 +108,9 @@
                                 <th width="10%">Evidence</th>
                                 <th width="20%">Hasil / Kendala</th>
                                 <th width="8%">Status</th>
-                                <th width="12%">Aksi</th>
+                                @if(auth()->user()->role === 'admin')
+                                    <th width="12%">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -139,102 +143,108 @@
                                             {{ ucfirst($report->status) }}
                                         </span>
                                     </td>
-                                    <td>
-                                        {{-- Tombol Edit --}}
-                                        <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $report->id }}">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
 
-                                        {{-- Tombol Hapus --}}
-                                        <form action="{{ route('reports.destroy', $report->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm"
-                                                    onclick="return confirm('Yakin hapus data ini?')">
-                                                <i class="fas fa-trash"></i> Hapus
+                                    {{-- Kolom Aksi: Hanya muncul jika user adalah admin --}}
+                                    @if(auth()->user()->role === 'admin')
+                                        <td>
+                                            {{-- Tombol Edit --}}
+                                            <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $report->id }}">
+                                                <i class="fas fa-edit"></i> Edit
                                             </button>
-                                        </form>
-                                    </td>
+
+                                            {{-- Tombol Hapus --}}
+                                            <form action="{{ route('reports.destroy', $report->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Yakin hapus data ini?')">
+                                                    <i class="fas fa-trash"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </td>
+                                    @endif
                                 </tr>
 
-                                {{-- Modal Edit --}}
-                                <div class="modal fade" id="editModal{{ $report->id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <form action="{{ route('reports.update', $report->id) }}" method="POST" enctype="multipart/form-data">
-                                                @csrf
-                                                @method('PUT')
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Edit Report - {{ $report->sales }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <div class="mb-3">
-                                                                <label>Sales</label>
-                                                                <input type="text" name="sales" class="form-control" value="{{ $report->sales }}" required>
+                                {{-- Modal Edit: Hanya perlu di-render jika user adalah admin --}}
+                                @if(auth()->user()->role === 'admin')
+                                    <div class="modal fade" id="editModal{{ $report->id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <form action="{{ route('reports.update', $report->id) }}" method="POST" enctype="multipart/form-data">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Edit Report - {{ $report->sales }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label>Sales</label>
+                                                                    <input type="text" name="sales" class="form-control" value="{{ $report->sales }}" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label>Tanggal</label>
+                                                                    <input type="date" name="tanggal" class="form-control" value="{{ $report->tanggal }}" required>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-6">
-                                                            <div class="mb-3">
-                                                                <label>Tanggal</label>
-                                                                <input type="date" name="tanggal" class="form-control" value="{{ $report->tanggal }}" required>
-                                                            </div>
+                                                        <div class="mb-3">
+                                                            <label>Aktivitas</label>
+                                                            <input type="text" name="aktivitas" class="form-control" value="{{ $report->aktivitas }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Lokasi</label>
+                                                            <input type="text" name="lokasi" class="form-control" value="{{ $report->lokasi }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Cluster</label>
+                                                            <select name="cluster" class="form-control select2" required>
+                                                                @foreach($competitors as $c)
+                                                                    <option value="{{ $c->cluster }}" {{ $report->cluster == $c->cluster ? 'selected' : '' }}>
+                                                                        {{ $c->cluster }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Evidence (Opsional)</label><br>
+                                                            @if($report->evidence)
+                                                                <div class="mb-2">
+                                                                    <small class="text-muted">Gambar saat ini:</small><br>
+                                                                    <img src="{{ asset('storage/'.$report->evidence) }}" width="100" class="rounded">
+                                                                </div>
+                                                            @endif
+                                                            <input type="file" name="evidence" class="form-control" accept="image/*">
+                                                            <small class="text-muted">Kosongkan jika tidak ingin mengubah gambar</small>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Hasil / Kendala</label>
+                                                            <textarea name="hasil_kendala" class="form-control" rows="3">{{ $report->hasil_kendala }}</textarea>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Status</label>
+                                                            <select name="status" class="form-control" required>
+                                                                <option value="selesai" {{ $report->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                                                                <option value="proses" {{ $report->status == 'proses' ? 'selected' : '' }}>Proses</option>
+                                                            </select>
                                                         </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <label>Aktivitas</label>
-                                                        <input type="text" name="aktivitas" class="form-control" value="{{ $report->aktivitas }}" required>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" class="btn btn-success">Update</button>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <label>Lokasi</label>
-                                                        <input type="text" name="lokasi" class="form-control" value="{{ $report->lokasi }}" required>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Cluster</label>
-                                                        <select name="cluster" class="form-control select2" required>
-                                                            @foreach($competitors as $c)
-                                                                <option value="{{ $c->cluster }}" {{ $report->cluster == $c->cluster ? 'selected' : '' }}>
-                                                                    {{ $c->cluster }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Evidence (Opsional)</label><br>
-                                                        @if($report->evidence)
-                                                            <div class="mb-2">
-                                                                <small class="text-muted">Gambar saat ini:</small><br>
-                                                                <img src="{{ asset('storage/'.$report->evidence) }}" width="100" class="rounded">
-                                                            </div>
-                                                        @endif
-                                                        <input type="file" name="evidence" class="form-control" accept="image/*">
-                                                        <small class="text-muted">Kosongkan jika tidak ingin mengubah gambar</small>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Hasil / Kendala</label>
-                                                        <textarea name="hasil_kendala" class="form-control" rows="3">{{ $report->hasil_kendala }}</textarea>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label>Status</label>
-                                                        <select name="status" class="form-control" required>
-                                                            <option value="selesai" {{ $report->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                                                            <option value="proses" {{ $report->status == 'proses' ? 'selected' : '' }}>Proses</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="submit" class="btn btn-success">Update</button>
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                </div>
-                                            </form>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                @endif
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center py-4">
+                                    <td colspan="{{ auth()->user()->role === 'admin' ? '10' : '9' }}" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i><br>
                                             Belum ada report activity<br>

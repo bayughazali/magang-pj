@@ -15,7 +15,7 @@ use App\Http\Controllers\CustomerSearchController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ExportCompetitorController;
 use App\Http\Controllers\ExportActivityController;
-
+use App\Http\Controllers\AdminController;
 
 // ================== ROOT REDIRECT ================== //
 Route::get('/', function () {
@@ -159,6 +159,19 @@ Route::middleware('auth')->group(function () {
         ];
     });
 });
+
+// Routes untuk Admin Management (hanya bisa diakses oleh admin)
+Route::middleware(['auth'])->group(function () {
+    // Admin CRUD Routes
+    Route::resource('admins', AdminController::class);
+});
+
+// Atau jika ingin lebih spesifik dengan middleware admin:
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::resource('admins', AdminController::class);
+});
+
+Route::resource('admins', AdminController::class);
 
 // ================== FALLBACK ROUTE ================== //
 Route::fallback(function () {
