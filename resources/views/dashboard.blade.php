@@ -6,12 +6,14 @@
         background: linear-gradient(90deg, #4c6ef5, #6a92ff);
         padding: 30px 0 120px 0;
         border-radius: 0 0 18px 18px;
-        overflow: visible;
+        /* overflow: visible; */
+        overflow: visible !important; /* 🟢 ini penting agar dropdown tidak terpotong */
     }
     .card-stats {
         border-radius: 14px;
         transition: .2s;
         position: relative;
+        z-index: auto; /* 🟢 Tambahkan ini agar tidak membuat konteks baru */
     }
     .card-stats:hover {
         transform: translateY(-3px);
@@ -26,7 +28,8 @@
         background: white;
         border-radius: 0 0 14px 14px;
         box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        z-index: 1000;
+        /* z-index: 1000; */
+        z-index: 9999 !important; /* 🟢 Tambahkan ini */
         display: none;
         margin-top: -14px;
         padding-top: 14px;
@@ -55,9 +58,9 @@
         user-select: none;
     }
     .chart-card {
-        border-radius: 14px;
-        padding: 20px;
-        height: 320px;
+    border-radius: 14px;
+    padding: 20px;
+    height: 420px; /* Atau 450px, 500px sesuai kebutuhan */
     }
     .table-card {
         border-radius: 14px;
@@ -80,291 +83,7 @@
         margin-bottom: 15px;
     }
 
-    /* ============================================ */
-    /* CAROUSEL STYLES - TAMPILAN LEBIH MENARIK */
-    /* ============================================ */
-    .carousel-container {
-        position: relative;
-        width: 100%;
-        height: 220px;
-        overflow: hidden;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    
-    .carousel-wrapper {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-    
-    .carousel-track {
-        display: flex;
-        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        height: 100%;
-    }
-    
-    .carousel-slide {
-        min-width: 100%;
-        height: 100%;
-        position: relative;
-        flex-shrink: 0;
-    }
-    
-    .carousel-slide img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        filter: brightness(0.85);
-        transition: filter 0.3s, transform 0.3s;
-    }
-    
-    .carousel-slide:hover img {
-        filter: brightness(0.95);
-        transform: scale(1.05);
-    }
-    
-    /* Gradient Overlay yang lebih dinamis */
-    .carousel-slide::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-            135deg, 
-            rgba(76, 110, 245, 0.3) 0%,
-            rgba(0, 0, 0, 0.2) 50%,
-            rgba(0, 0, 0, 0.8) 100%
-        );
-        z-index: 1;
-        transition: opacity 0.3s;
-    }
-    
-    .carousel-slide:hover::before {
-        opacity: 0.7;
-    }
-    
-    /* Caption dengan animasi yang lebih menarik */
-    .carousel-caption {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7) 70%, transparent);
-        color: white;
-        padding: 25px 25px 20px;
-        z-index: 2;
-        transform: translateY(0);
-        transition: transform 0.3s;
-    }
-    
-    .carousel-slide:hover .carousel-caption {
-        transform: translateY(-5px);
-    }
-    
-    .carousel-caption h5 {
-        font-size: 1.3rem;
-        font-weight: 700;
-        margin-bottom: 8px;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-        letter-spacing: 0.5px;
-        animation: slideInUp 0.5s ease-out;
-    }
-    
-    .carousel-caption p {
-        font-size: 0.9rem;
-        margin: 0;
-        opacity: 0.95;
-        text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
-        line-height: 1.5;
-        animation: slideInUp 0.7s ease-out;
-    }
-    
-    /* Badge untuk label promo */
-    .promo-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: linear-gradient(135deg, #ff6b6b, #ff8787);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 25px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        z-index: 3;
-        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
-        animation: pulse 2s infinite;
-    }
-    
-    .info-badge {
-        background: linear-gradient(135deg, #4c6ef5, #6a92ff);
-        box-shadow: 0 4px 12px rgba(76, 110, 245, 0.4);
-    }
-    
-    .new-badge {
-        background: linear-gradient(135deg, #28a745, #48c774);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-    }
-    
-    @keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-    }
-    
-    @keyframes slideInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Tombol navigasi dengan desain modern */
-    .carousel-btn {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255, 255, 255, 0.95);
-        border: none;
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        backdrop-filter: blur(5px);
-    }
-    
-    .carousel-btn:hover {
-        background: white;
-        box-shadow: 0 6px 25px rgba(76, 110, 245, 0.4);
-        transform: translateY(-50%) scale(1.15);
-    }
-    
-    .carousel-btn:active {
-        transform: translateY(-50%) scale(0.95);
-    }
-    
-    .carousel-btn-prev {
-        left: 15px;
-    }
-    
-    .carousel-btn-next {
-        right: 15px;
-    }
-    
-    .carousel-btn i {
-        color: #4c6ef5;
-        font-size: 1.3rem;
-        transition: transform 0.3s;
-    }
-    
-    .carousel-btn:hover i {
-        transform: scale(1.2);
-    }
-    
-    /* Indicators dengan desain yang lebih menarik */
-    .carousel-indicators {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 18px;
-    }
-    
-    .indicator-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #e0e0e0;
-        cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .indicator-dot::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: white;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    
-    .indicator-dot.active {
-        background: linear-gradient(135deg, #4c6ef5, #6a92ff);
-        width: 32px;
-        border-radius: 6px;
-        box-shadow: 0 3px 10px rgba(76, 110, 245, 0.5);
-    }
-    
-    .indicator-dot.active::before {
-        opacity: 0.3;
-    }
-    
-    .indicator-dot:hover {
-        background: #6a92ff;
-        transform: scale(1.2);
-    }
-    
-    /* Progress bar untuk auto-slide */
-    .carousel-progress {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #4c6ef5, #6a92ff);
-        width: 0%;
-        transition: width 0.1s linear;
-        z-index: 4;
-        box-shadow: 0 0 10px rgba(76, 110, 245, 0.5);
-    }
-    
-    .carousel-progress.active {
-        animation: progressBar 5s linear;
-    }
-    
-    @keyframes progressBar {
-        from { width: 0%; }
-        to { width: 100%; }
-    }
-    
-    /* Efek shimmer saat loading */
-    .carousel-slide.loading {
-        background: linear-gradient(
-            90deg,
-            #f0f0f0 25%,
-            #e0e0e0 50%,
-            #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-    }
-    
-    @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
+   
 </style>
 
 <div class="header-bg">
@@ -510,7 +229,7 @@
                     <p class="mt-3 mb-0 text-sm">
                         <span class="{{ $persenUsers >= 0 ? 'text-success' : 'text-danger' }}">
                             <i class="fa fa-arrow-{{ $persenUsers >= 0 ? 'up' : 'down' }}"></i> 
-                            {{ number_format(abs($persenUsers), 2) }}%
+                            {{ number_format(abs($persenUsers), 2   ) }}%
                         </span> 
                         user baru bulan ini
                     </p>
@@ -523,12 +242,13 @@
 
         {{-- 🔽 Tambahkan Dropdown ini (kalau belum ada) --}}
         <div class="card-dropdown" id="userDropdown">
-            <a href="{{ url('/users') }}">
+            <a href="{{ url('/user') }}">
                 <i class="ni ni-single-02"></i> Daftar User
             </a>
         </div>
     </div>
 </div>
+
 
 
             {{-- EXPORT DATA CARD --}}
@@ -579,7 +299,7 @@
     <div class="row">
 
         {{-- CAROUSEL PROMO/INFORMASI DENGAN TAMPILAN LEBIH MENARIK --}}
-        <div class="col-xl-7">
+        {{-- <div class="col-xl-7">
             <div class="card chart-card" style="overflow: hidden;">
                 <div class="chart-title">
                     <i class="fas fa-bullhorn text-warning me-2"></i>
@@ -590,49 +310,49 @@
                     Geser untuk melihat promo dan informasi lainnya
                 </div>
                 
-                {{-- Carousel Container --}}
-                <div class="carousel-container">
+                Carousel Container
+                <div class="carousel-container"> --}}
                     {{-- Progress Bar --}}
-                    <div class="carousel-progress" id="carouselProgress"></div>
+                    {{-- <div class="carousel-progress" id="carouselProgress"></div>
                     
                     <button class="carousel-btn carousel-btn-prev" onclick="moveSlide(-1)" aria-label="Previous Slide">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     
                     <div class="carousel-wrapper">
-                        <div class="carousel-track" id="carouselTrack">
+                        <div class="carousel-track" id="carouselTrack"> --}}
                             {{-- Slide 1 - Promo Akhir Tahun --}}
-                            <div class="carousel-slide">
+                            {{-- <div class="carousel-slide">
                                 <span class="promo-badge">HOT PROMO</span>
                                 <img src="{{ asset('images/promo/promo1.jpg') }}" alt="Promo 1" onerror="this.src='https://via.placeholder.com/800x400/4c6ef5/ffffff?text=Promo+Spesial+Akhir+Tahun'">
                                 <div class="carousel-caption">
                                     <h5>🎉 Promo Akhir Tahun Spektakuler!</h5>
                                     <p>Dapatkan diskon hingga 50% untuk semua produk pilihan. Buruan sebelum kehabisan!</p>
                                 </div>
-                            </div>
+                            </div> --}}
                             
                             {{-- Slide 2 - Update Sistem --}}
-                            <div class="carousel-slide">
+                            {{-- <div class="carousel-slide">
                                 <span class="promo-badge info-badge">INFO</span>
                                 <img src="{{ asset('images/promo/promo2.jpg') }}" alt="Promo 2" onerror="this.src='https://via.placeholder.com/800x400/28a745/ffffff?text=Update+Sistem+Terbaru'">
                                 <div class="carousel-caption">
                                     <h5>🚀 Update Sistem Terbaru V2.0</h5>
                                     <p>Nikmati fitur-fitur baru yang lebih canggih dan mudah digunakan di dashboard Anda</p>
                                 </div>
-                            </div>
+                            </div> --}}
                             
                             {{-- Slide 3 - Bundling --}}
-                            <div class="carousel-slide">
+                            {{-- <div class="carousel-slide">
                                 <span class="promo-badge new-badge">NEW</span>
                                 <img src="{{ asset('images/promo/promo3.jpg') }}" alt="Promo 3" onerror="this.src='https://via.placeholder.com/800x400/dc3545/ffffff?text=Paket+Bundling+Hemat'">
                                 <div class="carousel-caption">
                                     <h5>💎 Paket Bundling Super Hemat</h5>
                                     <p>Beli 2 gratis 1 untuk produk pilihan. Penawaran terbatas hanya untuk Anda!</p>
                                 </div>
-                            </div>
+                            </div> --}}
                             
                             {{-- Slide 4 - Cashback --}}
-                            <div class="carousel-slide">
+                            {{-- <div class="carousel-slide">
                                 <span class="promo-badge">CASHBACK</span>
                                 <img src="{{ asset('images/promo/promo4.jpg') }}" alt="Promo 4" onerror="this.src='https://via.placeholder.com/800x400/ffc107/333333?text=Cashback+20%25'">
                                 <div class="carousel-caption">
@@ -646,14 +366,34 @@
                     <button class="carousel-btn carousel-btn-next" onclick="moveSlide(1)" aria-label="Next Slide">
                         <i class="fas fa-chevron-right"></i>
                     </button>
-                </div>
+                </div> --}}
                 
                 {{-- Carousel Indicators --}}
-                <div class="carousel-indicators" id="carouselIndicators"></div>
+                {{-- <div class="carousel-indicators" id="carouselIndicators"></div>
+            </div>
+        </div> --}}
+
+        {{-- GRAFIK BAR: Pelanggan per Provinsi --}}
+        {{-- Bagian Chart dan Table --}}
+<div class="container-fluid mt-n5">
+    <div class="row">
+        <div class="col-xl-7">
+            <div class="card chart-card">
+                
+                <div class="chart-title">
+
+                    
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    Tren Pertumbuhan Pelanggan
+                </div>
+                <div class="chart-subtitle">
+                    Grafik menunjukkan total akumulasi pelanggan dalam 12 bulan terakhir
+                </div>
+                <canvas id="chart-line"></canvas>
             </div>
         </div>
 
-        {{-- GRAFIK BAR: Pelanggan per Provinsi --}}
+
         <div class="col-xl-5">
             <div class="card chart-card">
                 <div class="chart-title">
@@ -669,7 +409,7 @@
     </div>
 
     {{-- TABLE --}}
-    <div class="card table-card mt-4">
+    {{-- <div class="card table-card mt-4">
         <div class="table-responsive p-3">
             <table class="table align-items-center">
                 <thead>
@@ -691,7 +431,7 @@
             </table>
         </div>
     </div>
-</div>
+</div> --}}
 
 <script>
     console.log("bulanLabels:", {!! json_encode($bulanLabels) !!});
@@ -703,6 +443,10 @@
 {{-- Chart.js Scripts --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // LINE CHART: Tren Pertumbuhan Pelanggan (12 bulan terakhir) 
+    new Chart(document.getElementById('chart-line'), { 
+        type: 'line', data: { labels: {!! json_encode($bulanLabels) !!}, datasets: [{ label: 'Total Pelanggan', data: {!! json_encode($pelangganTren) !!}, borderColor: '#4c6ef5', backgroundColor: 'rgba(76, 110, 245, 0.1)', tension: 0.4, fill: true, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#4c6ef5', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverBackgroundColor: '#fff', pointHoverBorderColor: '#4c6ef5', pointHoverBorderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top', labels: { font: { size: 12 }, color: '#2c3e50', usePointStyle: true, padding: 15 } }, tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12, titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 }, callbacks: { label: function(context) { return 'Total Pelanggan: ' + context.parsed.y.toLocaleString('id-ID') + ' pelanggan'; } } } }, scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value.toLocaleString('id-ID'); }, font: { size: 11 }, color: '#6c757d' }, grid: { color: 'rgba(0, 0, 0, 0.05)' } }, x: { ticks: { font: { size: 10 }, color: '#6c757d', maxRotation: 45, minRotation: 45 }, grid: { display: false } } } } });
+
     // BAR CHART: Pelanggan per Provinsi Bulan Ini
     new Chart(document.getElementById('chart-bar'), {
         type: 'bar',
@@ -793,7 +537,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 {{-- Dropdown interaktif --}}
-<script>
+{{-- <script>
 function toggleDropdown(dropdownId, event) {
     if (event) event.stopPropagation();
 
@@ -817,6 +561,42 @@ document.querySelectorAll('.card-dropdown a').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.stopPropagation();
     });
+});
+</script> --}}
+
+<script>
+function toggleDropdown(dropdownId, event) {
+    if (event) event.stopPropagation();
+
+    // Tutup semua dropdown lain
+    document.querySelectorAll('.card-dropdown').forEach(function(d) {
+        if (d.id !== dropdownId) {
+            d.classList.remove('show');
+            d.parentElement.style.zIndex = '';
+        }
+    });
+
+    const dropdown = document.getElementById(dropdownId);
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+
+        // Jika muncul, pastikan card-nya berada paling depan
+        if (dropdown.classList.contains('show')) {
+            dropdown.parentElement.style.zIndex = 9999;
+        } else {
+            dropdown.parentElement.style.zIndex = '';
+        }
+    }
+}
+
+// Klik area luar → tutup dropdown
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.card-clickable')) {
+        document.querySelectorAll('.card-dropdown').forEach(function(d) {
+            d.classList.remove('show');
+            d.parentElement.style.zIndex = '';
+        });
+    }
 });
 </script>
 
@@ -867,7 +647,7 @@ document.querySelectorAll('.card-dropdown a').forEach(function(link) {
             dot.classList.toggle('active', index === currentSlide);
         });
         
-        // Update progress bar
+        // Update progress barfarengga
         updateProgressBar();
         
         // Reset auto slide

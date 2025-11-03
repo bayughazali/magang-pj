@@ -52,7 +52,6 @@
             <a class="dropdown-item" href="{{ route('report.customer.search') }}">Cari Pelanggan & kode FAT</a>
           </div>
         </li>
-
         <!-- User Management -->
         @auth
         <li class="nav-item dropdown">
@@ -72,6 +71,23 @@
         <!-- Export Data - Hanya untuk Admin -->
         @auth
         @if(auth()->user()->role === 'admin')
+         <!-- User Management - Semua user bisa lihat, tapi submenu Admin hanya untuk admin -->
+           <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
+                 role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="ni ni-single-02 text-info mr-1"></i> User Management
+              </a>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-user-management">
+                <a class="dropdown-item" href="{{ route('users.index') }}">User</a>
+                {{-- Submenu Admin hanya untuk admin --}}
+                @if(auth()->user()->role === 'admin')
+                  <a class="dropdown-item" href="{{ route('admins.index') }}">Admin</a>
+                @endif
+              </div>
+            </li>
+
+       <!-- Export Data - Hanya untuk Admin -->
+       @if(auth()->user()->role === 'admin')
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
                role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -96,13 +112,13 @@
               ->count();
           }
         @endphp
+       @endif
 
         <li class="nav-item dropdown">
           <a class="nav-link pr-0 text-dark" href="#" id="userDropdown" role="button"
              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <div class="media align-items-center position-relative">
               <span class="avatar avatar-sm rounded-circle">
-<<<<<<< Updated upstream
                 @if(Auth::user()->profile_photo_path)
                   <img alt="Profile Image" src="{{ Storage::url(Auth::user()->profile_photo_path) }}" class="rounded-circle">
                 @else
@@ -113,16 +129,9 @@
                 @if(auth()->user()->role === 'admin' && $pendingRequests > 0)
                   <span class="badge-notification">{{ $pendingRequests }}</span>
                 @endif
-=======
-                @if(Auth::check() && Auth::user()->profile_photo_path)
-  <img alt="Profile Image" src="{{ Storage::url(Auth::user()->profile_photo_path) }}" class="rounded-circle">
-@else
-  <img alt="Default Avatar" src="{{ asset('argonpro/assets/img/theme/team-4.jpg') }}" class="rounded-circle">
-@endif
->>>>>>> Stashed changes
               </span>
               <div class="media-body ml-2 d-none d-lg-block">
-                <span class="mb-0 text-sm font-weight-bold">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</span>
+                <span class="mb-0 text-sm font-weight-bold">{{ Auth::user()->name ?? 'User' }}</span>
               </div>
             </div>
           </a>
@@ -169,6 +178,33 @@
             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
               @csrf
             </form>
+         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+    <!-- Profile Link -->
+    <a href="{{ route('profile.show') }}" class="dropdown-item">
+        <i class="ni ni-single-02"></i>
+        <span>Profile</span>
+    </a>
+
+    <!-- Settings/Change Password Link
+    <a href="{{ route('profile.change.password') }}" class="dropdown-item">
+        <i class="ni ni-settings-gear-65"></i>
+        <span>Settings</span>
+    </a>
+     -->
+    <div class="dropdown-divider"></div>
+
+    <!-- Logout Link -->
+    <a href="{{ route('logout') }}" class="dropdown-item"
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+        <i class="ni ni-user-run"></i>
+        <span>Logout</span>
+    </a>
+
+    <!-- Hidden Logout Form -->
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+        @csrf
+    </form>
+</div>
           </div>
         </li>
         @endauth
