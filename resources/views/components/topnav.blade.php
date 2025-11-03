@@ -102,6 +102,7 @@
              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <div class="media align-items-center position-relative">
               <span class="avatar avatar-sm rounded-circle">
+<<<<<<< Updated upstream
                 @if(Auth::user()->profile_photo_path)
                   <img alt="Profile Image" src="{{ Storage::url(Auth::user()->profile_photo_path) }}" class="rounded-circle">
                 @else
@@ -112,9 +113,16 @@
                 @if(auth()->user()->role === 'admin' && $pendingRequests > 0)
                   <span class="badge-notification">{{ $pendingRequests }}</span>
                 @endif
+=======
+                @if(Auth::check() && Auth::user()->profile_photo_path)
+  <img alt="Profile Image" src="{{ Storage::url(Auth::user()->profile_photo_path) }}" class="rounded-circle">
+@else
+  <img alt="Default Avatar" src="{{ asset('argonpro/assets/img/theme/team-4.jpg') }}" class="rounded-circle">
+@endif
+>>>>>>> Stashed changes
               </span>
               <div class="media-body ml-2 d-none d-lg-block">
-                <span class="mb-0 text-sm font-weight-bold">{{ Auth::user()->name ?? 'User' }}</span>
+                <span class="mb-0 text-sm font-weight-bold">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</span>
               </div>
             </div>
           </a>

@@ -6,25 +6,36 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('pelanggans', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_pelanggan', 100)->unique();
-            $table->string('nama_pelanggan', 255);
-            $table->string('bandwidth', 100);
+            $table->string('id_pelanggan', 20)->primary(); // CUST-0001
+            $table->string('nama_pelanggan', 100);
+            $table->string('bandwidth', 20);
+            $table->string('nomor_telepon', 20);
+            $table->string('provinsi', 50)->nullable();
+            $table->string('kabupaten', 100)->nullable();
             $table->text('alamat');
-            $table->string('provinsi', 100); // Tambahan field provinsi
-            $table->string('kabupaten', 100); // Tambahan field kabupaten
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
-            $table->string('nomor_telepon', 50);
-            $table->string('cluster', 100);
-            $table->string('kode_fat', 100)->nullable();
+            $table->string('cluster', 20);
+            $table->string('kode_fat', 50)->nullable();
+            $table->decimal('latitude', 10, 6)->default(-8.409518);
+            $table->decimal('longitude', 10, 6)->default(115.188916);
             $table->timestamps();
+
+            // Index untuk performa query
+            $table->index('provinsi');
+            $table->index('kabupaten');
+            $table->index('cluster');
+            $table->index('created_at');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('pelanggans');
