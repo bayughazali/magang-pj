@@ -19,7 +19,7 @@ class DashboardController extends Controller
         $bulanLalu = Carbon::now()->subMonth();
 
         // ========================================
-        // 🔹 SALES REPORT - Hitung Jumlah Data
+        // 🔹 SALES REPORT
         // ========================================
         $totalReportBulanIni = ReportActivity::whereYear('created_at', $currentYear)
             ->whereMonth('created_at', $currentMonth)
@@ -34,7 +34,7 @@ class DashboardController extends Controller
             : 0;
 
         // ========================================
-        // 🔹 OPERATIONAL REPORT - Pelanggan
+        // 🔹 OPERATIONAL REPORT
         // ========================================
         $totalPelangganBulanIni = Pelanggan::whereYear('created_at', $currentYear)
             ->whereMonth('created_at', $currentMonth)
@@ -49,7 +49,11 @@ class DashboardController extends Controller
             : 0;
 
         // ========================================
+<<<<<<< Updated upstream
         // 🔹 USER MANAGEMENT - Total User
+=======
+        // 🔹 USER MANAGEMENT
+>>>>>>> Stashed changes
         // ========================================
         $totalUsers = User::count();
 
@@ -66,6 +70,7 @@ class DashboardController extends Controller
             : 0;
 
         // ========================================
+<<<<<<< Updated upstream
         // 🔹 GRAFIK LINE: Tren Pelanggan 12 Bulan
         // ========================================
         $trenData = Pelanggan::trenBulanan12Bulan();
@@ -82,6 +87,33 @@ class DashboardController extends Controller
 
         // ========================================
         // 🔹 GRAFIK BAR: Pelanggan per Provinsi Bulan Ini
+=======
+        // 🔹 GRAFIK LINE: DATA REAL DARI DATABASE
+        // ========================================
+        $bulanLabels = [];
+        $pelangganTren = [];
+        
+        for ($i = 11; $i >= 0; $i--) {
+            $tanggal = Carbon::now()->subMonths($i);
+            $bulanLabels[] = $tanggal->translatedFormat('M Y');
+            
+            // Hitung dari ReportActivity
+            $totalSales = ReportActivity::whereYear('created_at', $tanggal->year)
+                ->whereMonth('created_at', $tanggal->month)
+                ->count();
+            
+            // Hitung dari Pelanggan
+            $totalPelanggan = Pelanggan::whereYear('created_at', $tanggal->year)
+                ->whereMonth('created_at', $tanggal->month)
+                ->count();
+            
+            // Gabungkan atau pilih salah satu
+            $pelangganTren[] = $totalSales + $totalPelanggan;
+        }
+
+        // ========================================
+        // 🔹 GRAFIK BAR: PROVINSI
+>>>>>>> Stashed changes
         // ========================================
         $clusterData = Pelanggan::select('provinsi', DB::raw('COUNT(*) as total'))
             ->whereYear('created_at', $currentYear)
@@ -111,6 +143,7 @@ class DashboardController extends Controller
         })->toArray();
 
         // ========================================
+<<<<<<< Updated upstream
         // 🔹 DEBUG LOG (opsional, bisa dihapus nanti)
         // ========================================
         Log::info('Dashboard Chart Data', [
@@ -124,6 +157,18 @@ class DashboardController extends Controller
 
         // ========================================
         // 🔹 Return ke View
+=======
+        // 🔹 DEBUG LOG
+        // ========================================
+        \Log::info('=== DASHBOARD DEBUG ===');
+        \Log::info('Bulan Labels:', $bulanLabels);
+        \Log::info('Pelanggan Tren:', $pelangganTren);
+        \Log::info('Total Report Bulan Ini:', [$totalReportBulanIni]);
+        \Log::info('Total Pelanggan Bulan Ini:', [$totalPelangganBulanIni]);
+
+        // ========================================
+        // 🔹 KIRIM KE VIEW
+>>>>>>> Stashed changes
         // ========================================
         return view('dashboard', compact(
             'totalReportBulanIni',
@@ -138,4 +183,8 @@ class DashboardController extends Controller
             'clusterValues'
         ));
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes

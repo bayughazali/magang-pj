@@ -248,6 +248,7 @@ class Pelanggan extends Model
             ->toArray();
     }
 
+<<<<<<< Updated upstream
     /**
      * Hitung total pelanggan AKUMULATIF dalam periode 12 bulan terakhir
      * Data akan menunjukkan pertumbuhan total pelanggan dari waktu ke waktu
@@ -283,6 +284,35 @@ class Pelanggan extends Model
 
         return collect($hasil);
     }
+=======
+//     /**
+//      * Hitung total pelanggan per bulan dalam periode 12 bulan terakhir
+//      * 
+//      * @return array
+//      */
+//     public static function trenBulanan12Bulan()
+//     {
+//         return self::select(
+//             DB::raw('MONTH(created_at) as bulan'),
+//             DB::raw('YEAR(created_at) as tahun'),
+//             DB::raw('COUNT(*) as jumlah')
+//         )
+//         ->where('created_at', '>=', Carbon::now()->subMonths(11)->startOfMonth())
+//         ->groupBy('tahun', 'bulan')
+//         ->orderBy('tahun')
+//         ->orderBy('bulan')
+//         ->get()
+//         ->map(function ($item) {
+//             return [
+//                 'label' => Carbon::createFromDate($item->tahun, $item->bulan)->translatedFormat('M Y'),
+//                 'jumlah' => (int) $item->jumlah
+//              ];
+//         });
+// }
+        
+    //     return $result;
+    // }
+>>>>>>> Stashed changes
 
     /**
      * Get statistik total pelanggan
