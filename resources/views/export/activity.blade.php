@@ -14,21 +14,21 @@
           <small class="text-light opacity-75">Daftar aktivitas harian dan hasil kerja lapangan</small>
         </div>
 
-        <!-- EXPORT BUTTONS -->
+        <!-- EXPORT BUTTONS (dengan filter tanggal) -->
         <div class="d-flex gap-2">
-          <a href="{{ route('export.activity.pdf') }}" 
+          <a href="{{ route('export.activity.pdf', ['start_date' => request('start_date'), 'end_date' => request('end_date')]) }}" 
              class="btn btn-sm fw-semibold text-white shadow-sm"
              style="background-color: #E74C3C; border: none; transition: all 0.3s ease;">
              <i class="fas fa-file-pdf me-1 text-white"></i> PDF
           </a>
 
-          <a href="{{ route('export.activity.csv') }}" 
+          <a href="{{ route('export.activity.csv', ['start_date' => request('start_date'), 'end_date' => request('end_date')]) }}" 
              class="btn btn-sm fw-semibold text-white shadow-sm"
              style="background-color: #27AE60; border: none; transition: all 0.3s ease;">
              <i class="fas fa-file-csv me-1 text-white"></i> CSV
           </a>
 
-          <a href="{{ route('export.activity.excel') }}" 
+          <a href="{{ route('export.activity.excel', ['start_date' => request('start_date'), 'end_date' => request('end_date')]) }}" 
              class="btn btn-sm fw-semibold text-white shadow-sm"
              style="background-color: #2980B9; border: none; transition: all 0.3s ease;">
              <i class="fas fa-file-excel me-1 text-white"></i> Excel
@@ -39,6 +39,31 @@
 
     <!-- BODY -->
     <div class="card-body" style="background-color: #F6FBFF;"> {{-- biru sangat muda --}}
+      
+      <!-- FILTER FORM -->
+      <form method="GET" action="{{ route('activity.index') }}" class="mb-4">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label for="start_date" class="form-label fw-semibold">Tanggal Awal</label>
+            <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}">
+          </div>
+          <div class="col-md-3">
+            <label for="end_date" class="form-label fw-semibold">Tanggal Akhir</label>
+            <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}">
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary fw-semibold w-100">
+              <i class="fas fa-filter me-1"></i> Filter
+            </button>
+          </div>
+          <div class="col-md-3">
+            <a href="{{ route('activity.index') }}" class="btn btn-secondary fw-semibold w-100">
+              <i class="fas fa-sync-alt me-1"></i> Reset
+            </a>
+          </div>
+        </div>
+      </form>
+
       <div class="table-responsive rounded-3 shadow-sm bg-white p-3">
         <table class="table table-hover align-middle mb-0">
           <thead class="text-white text-center" style="background-color: #009FE3;"> {{-- biru PLN --}}

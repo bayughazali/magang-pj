@@ -173,7 +173,13 @@
                         <a href="{{ url('/user') }}"><i class="ni ni-single-02"></i> Daftar User</a>
                     </div>
                 </div>
+<<<<<<< Updated upstream
             </div>
+=======
+            </div> --}}
+
+             
+>>>>>>> Stashed changes
 
             {{-- EXPORT DATA --}}
             <div class="col-xl-3 col-sm-6">

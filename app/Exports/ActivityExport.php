@@ -10,9 +10,19 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class ActivityExport implements FromCollection, WithHeadings, WithStyles
 {
+    protected $startDate;
+    protected $endDate;
+
+    // ✅ Tambahan constructor
+    public function __construct($startDate = null, $endDate = null)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+    }
+
     public function collection()
     {
-        return ReportActivity::select(
+        $query = ReportActivity::select(
             'sales',
             'aktivitas',
             'tanggal',
@@ -21,7 +31,14 @@ class ActivityExport implements FromCollection, WithHeadings, WithStyles
             'evidence',
             'hasil_kendala',
             'status'
-        )->get();
+        );
+
+        // ✅ Tambahan filter tanggal
+        if ($this->startDate && $this->endDate) {
+            $query->whereBetween('tanggal', [$this->startDate, $this->endDate]);
+        }
+
+        return $query->get();
     }
 
     public function headings(): array

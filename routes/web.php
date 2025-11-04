@@ -419,7 +419,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         ->name('password-resets.update-expired');
 });
 
+// ================== ACTIVITY ROUTES ================== //
+Route::middleware(['auth'])->group(function () {
+    // Halaman utama laporan aktivitas (activity.index)
+    Route::get('/activity', [ExportActivityController::class, 'index'])->name('activity.index');
 
+    // Export PDF dengan filter tanggal
+    Route::get('/activity/export/pdf', [ExportActivityController::class, 'exportPdf'])->name('export.activity.pdf');
+
+    // Export CSV
+    Route::get('/activity/export/csv', [ExportActivityController::class, 'exportCsv'])->name('export.activity.csv');
+
+    // Export Excel
+    Route::get('/activity/export/excel', [ExportActivityController::class, 'exportExcel'])->name('export.activity.excel');
+});
 
 
 // Jika Anda memerlukan routes tambahan untuk admin, uncomment di bawah ini:
