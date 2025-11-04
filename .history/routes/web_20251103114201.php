@@ -16,6 +16,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ExportCompetitorController;
 use App\Http\Controllers\ExportActivityController;
 use App\Http\Controllers\AdminController;
+<<<<<<< Updated upstream
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\Admin\PasswordResetRequestController;
 

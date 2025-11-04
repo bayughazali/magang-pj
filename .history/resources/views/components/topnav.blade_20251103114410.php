@@ -52,68 +52,38 @@
             <a class="dropdown-item" href="{{ route('report.customer.search') }}">Cari Pelanggan & kode FAT</a>
           </div>
         </li>
-        <!-- User Management -->
-        @auth
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
-             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ni ni-single-02 text-info mr-1"></i> User Management
-          </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-user-management">
-            <a class="dropdown-item" href="{{ route('users.index') }}">User</a>
-            @if(auth()->user()->role === 'admin')
-              <a class="dropdown-item" href="{{ route('admins.index') }}">Admin</a>
-            @endif
-          </div>
-        </li>
-        @endauth
 
-        <!-- Export Data - Hanya untuk Admin -->
-        @auth
-        @if(auth()->user()->role === 'admin')
-         <!-- User Management - Semua user bisa lihat, tapi submenu Admin hanya untuk admin -->
-           <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
-                 role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="ni ni-single-02 text-info mr-1"></i> User Management
-              </a>
-              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-user-management">
-                <a class="dropdown-item" href="{{ route('users.index') }}">User</a>
-                {{-- Submenu Admin hanya untuk admin --}}
-                @if(auth()->user()->role === 'admin')
-                  <a class="dropdown-item" href="{{ route('admins.index') }}">Admin</a>
-                @endif
-              </div>
-            </li>
+         <!-- Tambah User -->
+       <li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-sales"
+     role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="ni ni-single-02 text-info mr-1"></i> User
+  </a>
+  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-sales">
+    <a class="dropdown-item" href="{{ route('users.index') }}">Daftar User</a>
+  </div>
+</li>
 
-       <!-- Export Data - Hanya untuk Admin -->
-       @if(auth()->user()->role === 'admin')
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
-               role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ni ni-cloud-download-95 text-success mr-1"></i> Export Data
-            </a>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-export">
-              <a class="dropdown-item" href="{{ route('export.activity') }}">Report Activity</a>
-              <a class="dropdown-item" href="{{ route('export.competitor') }}">Report Competitor</a>
-              <a class="dropdown-item" href="{{ route('export.operational') }}">Report Operational</a>
-            </div>
-          </li>
-        @endif
-        @endauth
+       <!-- Export Data -->
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
+     role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="ni ni-cloud-download-95 text-success mr-1"></i> Export Data
+  </a>
+  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-export">
+    <a class="dropdown-item" href="{{ route('export.activity') }}">Report Activity</a>
+    <a class="dropdown-item" href="{{ route('export.competitor') }}">Report Competitor</a>
+    <a class="dropdown-item" href="{{ route('export.operational') }}">Report Operational</a>
+  </div>
+</li>
 
-        <!-- User Profile -->
-        @auth
-        @php
-          $pendingRequests = 0;
-          if(auth()->user()->role === 'admin') {
-            $pendingRequests = \App\Models\PasswordResetRequest::where('status', 'pending')
-              ->where('expires_at', '>', now())
-              ->count();
-          }
-        @endphp
-       @endif
-
+<!-- Debug: Cek data user -->
+@php
+    $user = Auth::user();
+     //dd($user->profile_photo_path); // Uncomment untuk debug
+@endphp
+      <!-- User Profile -->
+      <ul class="navbar-nav align-items-center ml-4">
         <li class="nav-item dropdown">
           <a class="nav-link pr-0 text-dark" href="#" id="userDropdown" role="button"
              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -135,49 +105,6 @@
               </div>
             </div>
           </a>
-
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown" style="min-width: 320px;">
-            <!-- Header -->
-            <div class="dropdown-header">
-              <strong>{{ Auth::user()->name }}</strong>
-              <p class="text-muted text-xs mb-0">{{ Auth::user()->email }}</p>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <!-- Reset Password Requests - HANYA ADMIN -->
-            @if(auth()->user()->role === 'admin')
-              <a href="{{ route('admin.password-resets.index') }}" class="dropdown-item d-flex align-items-center justify-content-between">
-                <span>
-                  <i class="ni ni-key-25 text-warning"></i>
-                  <span>Reset Password Requests</span>
-                </span>
-                @if($pendingRequests > 0)
-                  <span class="badge badge-warning badge-pill">{{ $pendingRequests }}</span>
-                @endif
-              </a>
-              <div class="dropdown-divider"></div>
-            @endif
-
-            <!-- Profile Link -->
-            <a href="{{ route('profile.show') }}" class="dropdown-item">
-              <i class="ni ni-single-02 text-info"></i>
-              <span>Profile</span>
-            </a>
-
-            <div class="dropdown-divider"></div>
-
-            <!-- Logout Link -->
-            <a href="{{ route('logout') }}" class="dropdown-item text-danger"
-               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-              <i class="ni ni-user-run"></i>
-              <span>Logout</span>
-            </a>
-
-            <!-- Hidden Logout Form -->
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-              @csrf
-            </form>
          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
     <!-- Profile Link -->
     <a href="{{ route('profile.show') }}" class="dropdown-item">
@@ -207,7 +134,7 @@
 </div>
           </div>
         </li>
-        @endauth
+        @endif
       </ul>
     </div>
   </div>

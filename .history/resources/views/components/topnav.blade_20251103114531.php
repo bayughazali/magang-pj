@@ -88,6 +88,7 @@
 
        <!-- Export Data - Hanya untuk Admin -->
        @if(auth()->user()->role === 'admin')
+>>>>>>> Stashed changes
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-export"
                role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

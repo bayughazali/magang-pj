@@ -52,25 +52,7 @@
             <a class="dropdown-item" href="{{ route('report.customer.search') }}">Cari Pelanggan & kode FAT</a>
           </div>
         </li>
-        <!-- User Management -->
-        @auth
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
-             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ni ni-single-02 text-info mr-1"></i> User Management
-          </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbar-user-management">
-            <a class="dropdown-item" href="{{ route('users.index') }}">User</a>
-            @if(auth()->user()->role === 'admin')
-              <a class="dropdown-item" href="{{ route('admins.index') }}">Admin</a>
-            @endif
-          </div>
-        </li>
-        @endauth
 
-        <!-- Export Data - Hanya untuk Admin -->
-        @auth
-        @if(auth()->user()->role === 'admin')
          <!-- User Management - Semua user bisa lihat, tapi submenu Admin hanya untuk admin -->
            <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
@@ -99,6 +81,7 @@
               <a class="dropdown-item" href="{{ route('export.operational') }}">Report Operational</a>
             </div>
           </li>
+<<<<<<< Updated upstream
         @endif
         @endauth
 
@@ -112,7 +95,9 @@
               ->count();
           }
         @endphp
+=======
        @endif
+>>>>>>> Stashed changes
 
         <li class="nav-item dropdown">
           <a class="nav-link pr-0 text-dark" href="#" id="userDropdown" role="button"
@@ -135,6 +120,7 @@
               </div>
             </div>
           </a>
+<<<<<<< Updated upstream
 
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown" style="min-width: 320px;">
             <!-- Header -->
@@ -178,6 +164,7 @@
             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
               @csrf
             </form>
+=======
          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
     <!-- Profile Link -->
     <a href="{{ route('profile.show') }}" class="dropdown-item">
@@ -205,6 +192,7 @@
         @csrf
     </form>
 </div>
+>>>>>>> Stashed changes
           </div>
         </li>
         @endauth
