@@ -90,10 +90,9 @@
 
                     {{-- Tombol Edit --}}
                     <a href="{{ route('users.edit', $user->id) }}"
-                    class="btn btn-sm btn-warning"
-                    title="Edit User"
-                    style="margin-right: 8px;">
-                    <i class="fas fa-edit"></i> Edit
+                       class="btn btn-sm btn-warning"
+                       title="Edit User">
+                      <i class="fas fa-edit"></i> Edit
                     </a>
 
                     {{-- Tombol Hapus --}}
@@ -101,7 +100,7 @@
                             class="btn btn-sm btn-danger"
                             title="Hapus User"
                             onclick="confirmDelete({{ $user->id }}, '{{ $user->name }}')">
-                    <i class="fas fa-trash"></i> Hapus
+                      <i class="fas fa-trash"></i> Hapus
                     </button>
                   </div>
                 </td>

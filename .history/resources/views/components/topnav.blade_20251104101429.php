@@ -53,7 +53,7 @@
           </div>
         </li>
         <!-- User Management -->
-        {{-- @auth
+        @auth
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
              role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -66,7 +66,7 @@
             @endif
           </div>
         </li>
-        @endauth --}}
+        @endauth
 
         <!-- Export Data - Hanya untuk Admin -->
         @auth

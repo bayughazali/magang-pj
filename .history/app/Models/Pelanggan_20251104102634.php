@@ -257,27 +257,30 @@ class Pelanggan extends Model
     public static function trenBulanan12Bulan()
     {
         $hasil = [];
-        $now = Carbon::now();
+        $totalAkumulatif = 0;
 
-        // Loop 12 bulan terakhir (dari 11 bulan lalu sampai bulan ini)
+        // Hitung total pelanggan yang sudah ada sebelum 12 bulan terakhir
+        $tanggalMulai = Carbon::now()->subMonths(11)->startOfMonth();
+        $totalSebelumnya = self::where('created_at', '<', $tanggalMulai)->count();
+        $totalAkumulatif = $totalSebelumnya;
+
+        // Loop 12 bulan terakhir
         for ($i = 11; $i >= 0; $i--) {
-            // Buat Carbon instance baru untuk setiap iterasi
-            $bulanIni = Carbon::create($now->year, $now->month, 1)->subMonths($i);
+            $tanggal = Carbon::now()->subMonths($i);
+            $bulan = $tanggal->month;
+            $tahun = $tanggal->year;
 
-            // Ambil akhir bulan untuk query (instance terpisah)
-            $akhirBulan = Carbon::create($bulanIni->year, $bulanIni->month, 1)
-                                ->endOfMonth()
-                                ->endOfDay();
+            // Hitung pelanggan baru yang dibuat di bulan ini
+            $jumlahBaru = self::whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->count();
 
-            // Hitung TOTAL AKUMULATIF pelanggan sampai akhir bulan ini
-            $totalAkumulatif = self::where('created_at', '<=', $akhirBulan)->count();
+            // Tambahkan ke total akumulatif
+            $totalAkumulatif += $jumlahBaru;
 
-            // Simpan hasil
             $hasil[] = [
-                'label' => $bulanIni->translatedFormat('M'),  // Jan, Feb, Mar, dst
-                'jumlah' => $totalAkumulatif,
-                'bulan' => $bulanIni->month,
-                'tahun' => $bulanIni->year
+                'label' => $tanggal->translatedFormat('M'),  // Jan, Feb, Mar
+                'jumlah' => $totalAkumulatif
             ];
         }
 

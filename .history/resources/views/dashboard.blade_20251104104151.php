@@ -1,0 +1,542 @@
+@extends('layouts.app')
+
+@section('content')
+<style>
+    .header-bg {
+        background: linear-gradient(90deg, #4c6ef5, #6a92ff);
+        padding: 30px 0 120px 0;
+        border-radius: 0 0 18px 18px;
+        overflow: visible !important;
+    }
+    .card-stats {
+        border-radius: 14px;
+        transition: .2s;
+        position: relative;
+        z-index: auto;
+    }
+    .card-stats:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    .card-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 0 0 14px 14px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        z-index: 9999 !important;
+        display: none;
+        margin-top: -14px;
+        padding-top: 14px;
+    }
+    .card-dropdown.show {
+        display: block;
+    }
+    .card-dropdown a {
+        display: block;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+    }
+    .card-dropdown a:last-child {
+        border-bottom: none;
+    }
+    .card-dropdown a:hover {
+        background: #f8f9fa;
+        color: #4c6ef5;
+    }
+
+    .card-clickable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .chart-card {
+        border-radius: 14px;
+        padding: 20px;
+        min-height: 400px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 280px;
+        margin-top: 10px;
+    }
+
+    .table-card {
+        border-radius: 14px;
+    }
+
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .chart-subtitle {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="header-bg">
+    <div class="container-fluid" style="margin-top: 30px;">
+        <h2 class="text-white mb-3">Dashboard</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                <li class="breadcrumb-item"><a href="#"><i class="fas fa-home text-white"></i></a></li>
+                <li class="breadcrumb-item text-white">Dashboards</li>
+                <li class="breadcrumb-item active text-white">Default</li>
+            </ol>
+        </nav>
+
+        <div class="row mt-4">
+            {{-- SALES REPORT CARD --}}
+            <div class="col-xl-3 col-sm-6">
+                <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
+                     onclick="toggleDropdown('salesDropdown')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-1">Sales Report</h6>
+                                <h2 class="font-weight-bold mb-0 text-dark" id="countSales">
+                                    {{ number_format($totalReportBulanIni ?? 0) }}
+                                </h2>
+                                <small class="text-muted">
+                                    Total laporan bulan
+                                    <strong>{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</strong>
+                                </small>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="{{ $persenSales >= 0 ? 'text-success' : 'text-danger' }}">
+                                        <i class="fa fa-arrow-{{ $persenSales >= 0 ? 'up' : 'down' }}"></i>
+                                        {{ number_format(abs($persenSales), 2) }}%
+                                    </span>
+                                    dibanding bulan lalu
+                                </p>
+                            </div>
+                            <div>
+                                <i class="ni ni-chart-bar-32 display-4 text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dropdown" id="salesDropdown">
+                        <a href="{{ route('reports.activity') }}">
+                            <i class="ni ni-bullet-list-67"></i> Report Activity
+                        </a>
+                        <a href="{{ route('reports.competitor') }}">
+                            <i class="ni ni-chart-pie-35"></i> Report Competitor
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- OPERATIONAL REPORT CARD --}}
+            <div class="col-xl-3 col-sm-6">
+                <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
+                     onclick="toggleDropdown('operationalDropdown')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-1">Operational Report</h6>
+                                <h2 class="font-weight-bold mb-0 text-dark" id="countPelanggan">
+                                    {{ number_format($totalPelangganBulanIni ?? 0) }}
+                                </h2>
+                                <small class="text-muted">
+                                    Data pelanggan bulan
+                                    <strong>{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</strong>
+                                </small>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="{{ $persenPelanggan >= 0 ? 'text-success' : 'text-danger' }}">
+                                        <i class="fa fa-arrow-{{ $persenPelanggan >= 0 ? 'up' : 'down' }}"></i>
+                                        {{ number_format(abs($persenPelanggan), 2) }}%
+                                    </span>
+                                    dibanding bulan lalu
+                                </p>
+                            </div>
+                            <div>
+                                <i class="ni ni-laptop display-4 text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dropdown" id="operationalDropdown">
+                        <a href="{{ route('report.operational.index') }}">
+                            <i class="ni ni-archive-2"></i> Input Data Pelanggan
+                        </a>
+                        <a href="{{ route('report.customer.search') }}">
+                            <i class="ni ni-zoom-split-in"></i> Cari Pelanggan & Kode FAT
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- USER MANAGEMENT CARD --}}
+            <div class="col-xl-3 col-sm-6">
+                <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
+                     onclick="toggleDropdown('userDropdown')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-1">User Management</h6>
+                                <h2 class="font-weight-bold mb-0 text-dark" id="countUsers">
+                                    {{ number_format($totalUsers ?? 0) }}
+                                </h2>
+                                <small class="text-muted">
+                                    Total user terdaftar
+                                </small>
+                                <p class="mt-3 mb-0 text-sm">
+                                    <span class="{{ $persenUsers >= 0 ? 'text-success' : 'text-danger' }}">
+                                        <i class="fa fa-arrow-{{ $persenUsers >= 0 ? 'up' : 'down' }}"></i>
+                                        {{ number_format(abs($persenUsers), 2) }}%
+                                    </span>
+                                    user baru bulan ini
+                                </p>
+                            </div>
+                            <div>
+                                <i class="ni ni-single-02 display-4 text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dropdown" id="userDropdown">
+                        <a href="{{ url('/user') }}">
+                            <i class="ni ni-single-02"></i> Daftar User
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- EXPORT DATA CARD --}}
+            <div class="col-xl-3 col-sm-6">
+                <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
+                     onclick="toggleDropdown('exportDropdown')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-1">Export Data</h6>
+                                <h2 class="font-weight-bold mb-0 text-dark" id="countExport">
+                                    <i class="ni ni-cloud-download-95"></i>
+                                </h2>
+                                <small class="text-muted">
+                                    Download laporan
+                                </small>
+                                <p class="mt-3 mb-0 text-sm text-muted">
+                                    Klik untuk pilihan export
+                                </p>
+                            </div>
+                            <div>
+                                <i class="ni ni-archive-2 display-4 text-purple"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dropdown" id="exportDropdown">
+                        <a href="{{ route('export.activity') }}">
+                            <i class="ni ni-single-copy-04"></i> Report Activity
+                        </a>
+                        <a href="{{ route('export.competitor') }}">
+                            <i class="ni ni-single-copy-04"></i> Report Competitor
+                        </a>
+                        <a href="{{ route('export.operational') }}">
+                            <i class="ni ni-single-copy-04"></i> Report Operational
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- BAGIAN CHART --}}
+<div class="container-fluid mt-n5">
+    <div class="row">
+        {{-- LINE CHART --}}
+        <div class="col-xl-7">
+            <div class="card chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    Tren Pertumbuhan Pelanggan
+                </div>
+                <div class="chart-subtitle">
+                    Grafik menunjukkan total akumulasi pelanggan dalam 12 bulan terakhir
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-line"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {{-- BAR CHART --}}
+        <div class="col-xl-5">
+            <div class="card chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-map-marked-alt text-info me-2"></i>
+                    Pelanggan per Provinsi Bulan Ini
+                </div>
+                <div class="chart-subtitle">
+                    Distribusi pelanggan baru berdasarkan provinsi
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-bar"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Chart.js Scripts --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ========================================
+    // 🔹 FORCE: Destroy existing charts jika ada
+    // ========================================
+    if (window.myLineChart) {
+        window.myLineChart.destroy();
+    }
+    if (window.myBarChart) {
+        window.myBarChart.destroy();
+    }
+
+    // ========================================
+    // 🔹 DEBUG: Cek data yang diterima
+    // ========================================
+    const bulanLabelsData = {!! json_encode($bulanLabels) !!};
+    const pelangganTrenData = {!! json_encode($pelangganTren) !!};
+    const clusterLabelsData = {!! json_encode($clusterLabels) !!};
+    const clusterValuesData = {!! json_encode($clusterValues) !!};
+
+    console.log('=== DEBUG CHART DATA ===');
+    console.log('Bulan Labels:', bulanLabelsData);
+    console.log('Pelanggan Tren:', pelangganTrenData);
+    console.log('Cluster Labels:', clusterLabelsData);
+    console.log('Cluster Values:', clusterValuesData);
+    console.log('========================');
+
+    // ========================================
+    // 🔹 LINE CHART: Tren Pertumbuhan Pelanggan
+    // ========================================
+    const lineCtx = document.getElementById('chart-line');
+
+    if (!lineCtx) {
+        console.error('Canvas chart-line tidak ditemukan!');
+    } else {
+        window.myLineChart = new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: bulanLabelsData,
+                datasets: [{
+                    label: 'Total Pelanggan',
+                    data: pelangganTrenData,
+                    borderColor: '#4c6ef5',
+                    backgroundColor: 'rgba(76, 110, 245, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#4c6ef5',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#4c6ef5',
+                    pointHoverBorderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: { size: 12 },
+                            color: '#2c3e50',
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Total Pelanggan: ' + context.parsed.y.toLocaleString('id-ID') + ' pelanggan';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('id-ID');
+                            },
+                            font: { size: 11 },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#6c757d',
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log('Line chart created successfully!');
+    }
+
+    // ========================================
+    // 🔹 BAR CHART: Pelanggan per Provinsi
+    // ========================================
+    const barCtx = document.getElementById('chart-bar');
+
+    if (!barCtx) {
+        console.error('Canvas chart-bar tidak ditemukan!');
+    } else {
+        window.myBarChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: clusterLabelsData,
+                datasets: [{
+                    label: 'Jumlah Pelanggan',
+                    data: clusterValuesData,
+                    backgroundColor: [
+                        '#4c6ef5',
+                        '#6a92ff',
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545',
+                        '#17a2b8'
+                    ],
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Pelanggan: ' + context.parsed.y + ' orang';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: { size: 11 },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log('Bar chart created successfully!');
+    }
+</script>
+
+{{-- CountUp.js untuk animasi angka --}}
+<script src="https://cdn.jsdelivr.net/npm/countup.js@2.6.2/dist/countUp.umd.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const elements = ['countSales', 'countPelanggan', 'countUsers'];
+
+    elements.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            const endValue = parseInt(el.textContent.replace(/[^\d]/g, '')) || 0;
+            const counter = new countUp.CountUp(id, endValue, {
+                duration: 2,
+                separator: '.'
+            });
+            if (!counter.error) {
+                counter.start();
+            } else {
+                console.error(counter.error);
+            }
+        }
+    });
+});
+</script>
+
+{{-- Dropdown interaktif --}}
+<script>
+function toggleDropdown(dropdownId, event) {
+    if (event) event.stopPropagation();
+
+    document.querySelectorAll('.card-dropdown').forEach(function(d) {
+        if (d.id !== dropdownId) {
+            d.classList.remove('show');
+            d.parentElement.style.zIndex = '';
+        }
+    });
+
+    const dropdown = document.getElementById(dropdownId);
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+
+        if (dropdown.classList.contains('show')) {
+            dropdown.parentElement.style.zIndex = 9999;
+        } else {
+            dropdown.parentElement.style.zIndex = '';
+        }
+    }
+}
+
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.card-clickable')) {
+        document.querySelectorAll('.card-dropdown').forEach(function(d) {
+            d.classList.remove('show');
+            d.parentElement.style.zIndex = '';
+        });
+    }
+});
+</script>
+
+@endsection

@@ -249,40 +249,32 @@ class Pelanggan extends Model
     }
 
     /**
-     * Hitung total pelanggan AKUMULATIF dalam periode 12 bulan terakhir
-     * Data akan menunjukkan pertumbuhan total pelanggan dari waktu ke waktu
+     * Hitung total pelanggan per bulan dalam periode 12 bulan terakhir
      *
-     * @return \Illuminate\Support\Collection
+     * @return array
      */
     public static function trenBulanan12Bulan()
     {
-        $hasil = [];
-        $now = Carbon::now();
+        return self::select(
+            DB::raw('MONTH(created_at) as bulan'),
+            DB::raw('YEAR(created_at) as tahun'),
+            DB::raw('COUNT(*) as jumlah')
+        )
+        ->where('created_at', '>=', Carbon::now()->subMonths(11)->startOfMonth())
+        ->groupBy('tahun', 'bulan')
+        ->orderBy('tahun')
+        ->orderBy('bulan')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'label' => Carbon::createFromDate($item->tahun, $item->bulan)->translatedFormat('M Y'),
+                'jumlah' => (int) $item->jumlah
+             ];
+        });
+}
 
-        // Loop 12 bulan terakhir (dari 11 bulan lalu sampai bulan ini)
-        for ($i = 11; $i >= 0; $i--) {
-            // Buat Carbon instance baru untuk setiap iterasi
-            $bulanIni = Carbon::create($now->year, $now->month, 1)->subMonths($i);
-
-            // Ambil akhir bulan untuk query (instance terpisah)
-            $akhirBulan = Carbon::create($bulanIni->year, $bulanIni->month, 1)
-                                ->endOfMonth()
-                                ->endOfDay();
-
-            // Hitung TOTAL AKUMULATIF pelanggan sampai akhir bulan ini
-            $totalAkumulatif = self::where('created_at', '<=', $akhirBulan)->count();
-
-            // Simpan hasil
-            $hasil[] = [
-                'label' => $bulanIni->translatedFormat('M'),  // Jan, Feb, Mar, dst
-                'jumlah' => $totalAkumulatif,
-                'bulan' => $bulanIni->month,
-                'tahun' => $bulanIni->year
-            ];
-        }
-
-        return collect($hasil);
-    }
+    //     return $result;
+    // }
 
     /**
      * Get statistik total pelanggan
@@ -369,6 +361,8 @@ class Pelanggan extends Model
             ->orderBy('jarak', 'asc')
             ->get();
     }
+
+
 
     // ========================================
     // 🔹 RELATIONSHIPS (jika diperlukan di masa depan)

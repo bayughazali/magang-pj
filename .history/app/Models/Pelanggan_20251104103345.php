@@ -257,27 +257,21 @@ class Pelanggan extends Model
     public static function trenBulanan12Bulan()
     {
         $hasil = [];
-        $now = Carbon::now();
 
-        // Loop 12 bulan terakhir (dari 11 bulan lalu sampai bulan ini)
+        // Loop 12 bulan terakhir
         for ($i = 11; $i >= 0; $i--) {
-            // Buat Carbon instance baru untuk setiap iterasi
-            $bulanIni = Carbon::create($now->year, $now->month, 1)->subMonths($i);
+            $tanggal = Carbon::now()->subMonths($i);
 
-            // Ambil akhir bulan untuk query (instance terpisah)
-            $akhirBulan = Carbon::create($bulanIni->year, $bulanIni->month, 1)
-                                ->endOfMonth()
-                                ->endOfDay();
+            // Buat instance baru untuk endOfMonth agar tidak mutasi
+            $akhirBulan = Carbon::now()->subMonths($i)->endOfMonth();
 
-            // Hitung TOTAL AKUMULATIF pelanggan sampai akhir bulan ini
-            $totalAkumulatif = self::where('created_at', '<=', $akhirBulan)->count();
+            // Hitung TOTAL pelanggan sampai akhir bulan ini (akumulatif)
+            $totalSampaiSekarang = self::where('created_at', '<=', $akhirBulan)
+                ->count();
 
-            // Simpan hasil
             $hasil[] = [
-                'label' => $bulanIni->translatedFormat('M'),  // Jan, Feb, Mar, dst
-                'jumlah' => $totalAkumulatif,
-                'bulan' => $bulanIni->month,
-                'tahun' => $bulanIni->year
+                'label' => $tanggal->translatedFormat('M'),  // Des, Jan, Feb, dst
+                'jumlah' => $totalSampaiSekarang
             ];
         }
 

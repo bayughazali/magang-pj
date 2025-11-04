@@ -53,7 +53,7 @@
           </div>
         </li>
         <!-- User Management -->
-        {{-- @auth
+        @auth
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle text-dark" href="#" id="navbar-user-management"
              role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -66,10 +66,10 @@
             @endif
           </div>
         </li>
-        @endauth --}}
+        @endauth
 
         <!-- Export Data - Hanya untuk Admin -->
-        @auth
+        {{-- @auth
         @if(auth()->user()->role === 'admin')
          <!-- User Management - Semua user bisa lihat, tapi submenu Admin hanya untuk admin -->
            <li class="nav-item dropdown">
@@ -84,7 +84,7 @@
                   <a class="dropdown-item" href="{{ route('admins.index') }}">Admin</a>
                 @endif
               </div>
-            </li>
+            </li> --}}
 
        <!-- Export Data - Hanya untuk Admin -->
        @if(auth()->user()->role === 'admin')

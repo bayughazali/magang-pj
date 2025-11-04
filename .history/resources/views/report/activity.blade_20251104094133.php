@@ -139,7 +139,7 @@
                                     </td>
                                     <td>{{ Str::limit($report->hasil_kendala ?? '-', 30) }}</td>
                                     <td>
-                                        <span class="badge {{ $report->status == 'selesai' ? 'bg-warning' : 'bg-success' }}">
+                                        <span class="badge {{ $report->status == 'selesai' ? 'bg-success' : 'bg-success' }}">
                                             {{ ucfirst($report->status) }}
                                         </span>
                                     </td>

@@ -283,35 +283,72 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // BAR CHART (batang tebal)
-    new Chart(document.getElementById('chart-bar'), {
-        type: 'bar',
-        data: {
-            labels: clusterLabels,
-            datasets: [{
-                label: 'Jumlah Pelanggan',
-                data: clusterValues,
-                backgroundColor: ['#4c6ef5','#6a92ff','#28a745','#ffc107','#dc3545','#17a2b8'],
-                borderRadius: 10,
-                barThickness: 50, // ✅ batang lebih tebal
-                maxBarThickness: 60,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { precision: 0 } },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#6c757d', font: { size: 12 } },
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.6
+    const ctxBar = document.getElementById('chart-bar');
+    if (ctxBar) {
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: clusterLabels,
+                datasets: [{
+                    label: 'Jumlah Pelanggan',
+                    data: clusterValues,
+                    backgroundColor: [
+                        '#4c6ef5',
+                        '#6a92ff',
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545',
+                        '#17a2b8'
+                    ],
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Pelanggan: ' + context.parsed.y + ' orang';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: { size: 11 },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+    }
+</script>
 });
 </script>
 

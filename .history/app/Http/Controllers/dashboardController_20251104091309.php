@@ -49,39 +49,38 @@ class DashboardController extends Controller
             : 0;
 
         // ========================================
-        // 🔹 USER MANAGEMENT - Total User
+        // 🔹 USER MANAGEMENT - Total User (SEMUA)
         // ========================================
         $totalUsers = User::count();
-
+        
         $totalUsersBulanIni = User::whereYear('created_at', $currentYear)
             ->whereMonth('created_at', $currentMonth)
             ->count();
-
+        
         $totalUsersBulanLalu = User::whereYear('created_at', $bulanLalu->year)
             ->whereMonth('created_at', $bulanLalu->month)
             ->count();
-
+        
         $persenUsers = $totalUsersBulanLalu > 0
             ? (($totalUsersBulanIni - $totalUsersBulanLalu) / $totalUsersBulanLalu) * 100
             : 0;
 
+        
         // ========================================
-        // 🔹 GRAFIK LINE: Tren Pelanggan 12 Bulan
+        // 🔹 GRAFIK LINE: Tren Pelanggan Bulanan (12 bulan terakhir)
         // ========================================
         $trenData = Pelanggan::trenBulanan12Bulan();
-
-        // Inisialisasi array kosong
-        $bulanLabels = [];
+        
         $pelangganTren = [];
-
-        // Loop dan extract data dengan aman
+        $bulanLabels = [];
+        
         foreach ($trenData as $data) {
             $bulanLabels[] = $data['label'];
-            $pelangganTren[] = (int) $data['jumlah']; // Cast ke integer untuk memastikan
+            $pelangganTren[] = $data['jumlah'];
         }
 
         // ========================================
-        // 🔹 GRAFIK BAR: Pelanggan per Provinsi Bulan Ini
+        // 🔹 GRAFIK BAR: Perbandingan per Provinsi Bulan Ini
         // ========================================
         $clusterData = Pelanggan::select('provinsi', DB::raw('COUNT(*) as total'))
             ->whereYear('created_at', $currentYear)
@@ -91,39 +90,36 @@ class DashboardController extends Controller
             ->groupBy('provinsi')
             ->orderByDesc('total')
             ->take(6)
-            ->get();
+            ->pluck('total', 'provinsi')
+            ->toArray();
 
-        // Jika tidak ada data bulan ini, ambil data keseluruhan
-        if ($clusterData->isEmpty()) {
+        if (empty($clusterData)) {
             $clusterData = Pelanggan::select('provinsi', DB::raw('COUNT(*) as total'))
                 ->whereNotNull('provinsi')
                 ->where('provinsi', '!=', '')
                 ->groupBy('provinsi')
                 ->orderByDesc('total')
                 ->take(6)
-                ->get();
+                ->pluck('total', 'provinsi')
+                ->toArray();
         }
 
-        // Extract labels dan values
-        $clusterLabels = $clusterData->pluck('provinsi')->toArray();
-        $clusterValues = $clusterData->pluck('total')->map(function($val) {
-            return (int) $val; // Cast ke integer
-        })->toArray();
+        $clusterLabels = array_keys($clusterData);
+        $clusterValues = array_values($clusterData);
 
         // ========================================
-        // 🔹 DEBUG LOG (opsional, bisa dihapus nanti)
+        // 🔹 DEBUG: Log data untuk pengecekan
         // ========================================
-        Log::info('Dashboard Chart Data', [
-            'bulan_labels_count' => count($bulanLabels),
-            'pelanggan_tren_count' => count($pelangganTren),
-            'bulan_labels' => $bulanLabels,
-            'pelanggan_tren' => $pelangganTren,
-            'cluster_labels' => $clusterLabels,
-            'cluster_values' => $clusterValues,
+        Log::info('Dashboard Data:', [
+            'user_id' => auth()->id(),
+            'total_pelanggan' => Pelanggan::count(),
+            'pelanggan_bulan_ini' => $totalPelangganBulanIni,
+            'tren_data' => $pelangganTren,
+            'provinsi_data' => $clusterData,
         ]);
 
         // ========================================
-        // 🔹 Return ke View
+        // 🔹 Kirim Data ke View
         // ========================================
         return view('dashboard', compact(
             'totalReportBulanIni',
@@ -139,3 +135,15 @@ class DashboardController extends Controller
         ));
     }
 }
+
+// ## 📁 **Struktur Folder untuk Gambar Promo** (Opsional)
+
+// Buat folder ini di project Anda:
+// ```
+// public/
+//   └── images/
+//       └── promo/
+//           ├── promo1.jpg
+//           ├── promo2.jpg
+//           ├── promo3.jpg
+//           └── promo4.jpg

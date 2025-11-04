@@ -18,6 +18,7 @@
         transform: translateY(-3px);
         box-shadow: 0 6px 18px rgba(0,0,0,0.12);
     }
+
     .card-dropdown {
         position: absolute;
         top: 100%;
@@ -45,6 +46,7 @@
         background: #f8f9fa;
         color: #4c6ef5;
     }
+
     .card-clickable { cursor: pointer; user-select: none; }
     .chart-card {
         border-radius: 14px;
@@ -267,52 +269,82 @@ document.addEventListener('DOMContentLoaded', function () {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: true, position: 'top' },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { font: { size: 12 }, color: '#2c3e50', usePointStyle: true, padding: 15 }
+                },
                 tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
                     titleFont: { size: 13, weight: 'bold' },
                     bodyFont: { size: 12 },
-                    padding: 10
+                    callbacks: {
+                        label: ctx => 'Total Pelanggan: ' + ctx.parsed.y.toLocaleString('id-ID') + ' pelanggan'
+                    }
                 }
             },
             scales: {
                 y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { display: false } }
+                x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }
             }
         }
     });
 
-    // BAR CHART (batang tebal)
-    new Chart(document.getElementById('chart-bar'), {
-        type: 'bar',
-        data: {
-            labels: clusterLabels,
-            datasets: [{
-                label: 'Jumlah Pelanggan',
-                data: clusterValues,
-                backgroundColor: ['#4c6ef5','#6a92ff','#28a745','#ffc107','#dc3545','#17a2b8'],
-                borderRadius: 10,
-                barThickness: 50, // ✅ batang lebih tebal
-                maxBarThickness: 60,
-                borderSkipped: false
-            }]
+   // BAR CHART (batang tebal dan proporsional)
+new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: {
+        labels: clusterLabels,
+        datasets: [{
+            label: 'Jumlah Pelanggan',
+            data: clusterValues,
+            backgroundColor: [
+                '#4c6ef5',
+                '#6a92ff',
+                '#28a745',
+                '#ffc107',
+                '#dc3545',
+                '#17a2b8'
+            ],
+            borderRadius: 10,
+            barThickness: 50, // ✅ batang lebih tebal
+            maxBarThickness: 60,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                padding: 10
+            }
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { precision: 0 } },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#6c757d', font: { size: 12 } },
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.6
-                }
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: { precision: 0 }
+            },
+            x: {
+                grid: { display: false },
+                ticks: {
+                    color: '#6c757d',
+                    font: { size: 12 }
+                },
+                // jarak antar batang (kecil = lebih rapat)
+                barPercentage: 0.5, // ✅ batang lebih rapat
+                categoryPercentage: 0.6
             }
         }
-    });
+    }
 });
+
 </script>
 
 {{-- CountUp.js --}}

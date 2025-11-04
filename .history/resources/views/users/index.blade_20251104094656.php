@@ -90,9 +90,8 @@
 
                     {{-- Tombol Edit --}}
                     <a href="{{ route('users.edit', $user->id) }}"
-                    class="btn btn-sm btn-warning"
-                    title="Edit User"
-                    style="margin-right: 8px;">
+                    class="btn btn-sm btn-warning me-2"
+                    title="Edit User">
                     <i class="fas fa-edit"></i> Edit
                     </a>
 
