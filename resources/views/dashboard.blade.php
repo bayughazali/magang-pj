@@ -89,7 +89,7 @@
             </ol>
         </nav>
 
-        <div class="row mt-4">
+        <div class="row mt-4 {{ auth()->user()->role !== 'admin' ? 'justify-content-center' : '' }}">
             {{-- SALES REPORT --}}
             <div class="col-xl-3 col-sm-6">
                 <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
@@ -153,6 +153,7 @@
             </div>
 
           {{-- USER MANAGEMENT --}}
+          @if(auth()->user()->role === 'admin')
              <div class="col-xl-3 col-sm-6">
                 <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
                      onclick="toggleDropdown('usersDropdown', event)">
@@ -180,8 +181,10 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             {{-- EXPORT DATA --}}
+            @if(auth()->user()->role === 'admin')
             <div class="col-xl-3 col-sm-6">
                 <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
                      onclick="toggleDropdown('exportDropdown', event)">
@@ -202,6 +205,7 @@
                         <a href="{{ route('export.operational') }}"><i class="ni ni-single-copy-04"></i> Report Operational</a>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
