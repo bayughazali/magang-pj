@@ -174,7 +174,7 @@
                             <div><i class="ni ni-single-02 display-4 text-info"></i></div>
                         </div>
                     </div>
-                    <div class="card-dropdown" id="usersDropdown">
+                    <div class="card-dropdown" id="userDropdown">
                         <a href="{{ route('users.index') }}"><i class="ni ni-single-02"></i> User</a>
                         <a href="{{ route('admins.index') }}"><i class="ni ni-badge"></i> Admin</a>
                     </div>

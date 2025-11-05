@@ -31,9 +31,7 @@
         margin-top: -14px;
         padding-top: 14px;
     }
-    .card-dropdown.show {
-        display: block !important;
-    }
+    .card-dropdown.show { display: block; }
     .card-dropdown a {
         display: block;
         padding: 12px 20px;
@@ -47,10 +45,7 @@
         background: #f8f9fa;
         color: #4c6ef5;
     }
-    .card-clickable {
-        cursor: pointer;
-        user-select: none;
-    }
+    .card-clickable { cursor: pointer; user-select: none; }
     .chart-card {
         border-radius: 14px;
         padding: 20px;
@@ -152,10 +147,10 @@
                 </div>
             </div>
 
-          {{-- USER MANAGEMENT --}}
-             <div class="col-xl-3 col-sm-6">
+            {{-- USER MANAGEMENT --}}
+            <div class="col-xl-3 col-sm-6">
                 <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
-                     onclick="toggleDropdown('usersDropdown', event)">
+                     onclick="toggleDropdown('userDropdown', event)">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -174,9 +169,9 @@
                             <div><i class="ni ni-single-02 display-4 text-info"></i></div>
                         </div>
                     </div>
-                    <div class="card-dropdown" id="usersDropdown">
-                        <a href="{{ route('users.index') }}"><i class="ni ni-single-02"></i> User</a>
-                        <a href="{{ route('admins.index') }}"><i class="ni ni-badge"></i> Admin</a>
+                    <div class="card-dropdown" id="userDropdown">
+                        <a href="{{ url('/user') }}"><i class="ni ni-single-02"></i> User</a>
+                        <a href="{{ url('/admin') }}"><i class="ni ni-badge"></i> Admin</a>
                     </div>
                 </div>
             </div>
@@ -341,31 +336,16 @@ document.addEventListener("DOMContentLoaded", function() {
 <script>
 function toggleDropdown(dropdownId, event) {
     if (event) event.stopPropagation();
-
-    console.log('Toggle dropdown:', dropdownId); // Debug log
-
-    // Tutup semua dropdown kecuali yang diklik
     document.querySelectorAll('.card-dropdown').forEach(d => {
-        if (d.id !== dropdownId) {
-            d.classList.remove('show');
-            d.parentElement.style.zIndex = '';
-        }
+        if (d.id !== dropdownId) { d.classList.remove('show'); d.parentElement.style.zIndex = ''; }
     });
-
-    // Toggle dropdown yang diklik
     const dropdown = document.getElementById(dropdownId);
     if (dropdown) {
-        console.log('Dropdown found:', dropdownId); // Debug log
         dropdown.classList.toggle('show');
-        dropdown.parentElement.style.zIndex = dropdown.classList.contains('show') ? '9999' : '';
-        console.log('Dropdown has show class:', dropdown.classList.contains('show')); // Debug log
-    } else {
-        console.error('Dropdown not found:', dropdownId); // Debug log
+        dropdown.parentElement.style.zIndex = dropdown.classList.contains('show') ? 9999 : '';
     }
 }
-
-// Tutup dropdown saat klik di luar
-document.addEventListener('click', function(e) {
+document.addEventListener('click', e => {
     if (!e.target.closest('.card-clickable')) {
         document.querySelectorAll('.card-dropdown').forEach(d => {
             d.classList.remove('show');

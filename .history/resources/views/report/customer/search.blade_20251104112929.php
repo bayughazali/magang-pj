@@ -146,14 +146,14 @@
                                 @foreach($pelanggans as $index => $pelanggan)
                             <tr id="row-{{ $pelanggan->id }}">
                                 <td>{{ $startIndex + $index }}</td>
-                                <td>
+                                {{-- <td>
                                     <span class="fw-semibold text-primary">{{ $pelanggan->id_pelanggan ?? 'N/A' }}</span>
-                                </td>
+                                </td> --}}
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        {{-- <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
                                             <i class="fas fa-user text-white"></i>
-                                        </div> --}}
+                                        </div>
                                         <div>
                                             <div class="fw-semibold">{{ $pelanggan->nama_pelanggan ?? 'N/A' }}</div>
                                             <small class="text-muted">

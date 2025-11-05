@@ -153,10 +153,9 @@
             </div>
 
           {{-- USER MANAGEMENT --}}
-             <div class="col-xl-3 col-sm-6">
-                <div class="card card-stats border-0 shadow-sm bg-white card-clickable"
-                     onclick="toggleDropdown('usersDropdown', event)">
-                    <div class="card-body">
+            <div class="col-xl-3 col-sm-6">
+                <div class="card card-stats border-0 shadow-sm bg-white">
+                    <div class="card-body card-clickable" onclick="toggleDropdown('userDropdown', event)">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="text-uppercase text-muted mb-1">User Management</h6>
@@ -174,7 +173,7 @@
                             <div><i class="ni ni-single-02 display-4 text-info"></i></div>
                         </div>
                     </div>
-                    <div class="card-dropdown" id="usersDropdown">
+                    <div class="card-dropdown" id="userDropdown">
                         <a href="{{ route('users.index') }}"><i class="ni ni-single-02"></i> User</a>
                         <a href="{{ route('admins.index') }}"><i class="ni ni-badge"></i> Admin</a>
                     </div>
