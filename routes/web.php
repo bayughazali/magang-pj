@@ -129,17 +129,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('competitor', CompetitorController::class);
 
     // ================== OPERATIONAL REPORT ROUTES ================== //
-    Route::prefix('report/operational')->name('report.operational.')->group(function () {
-        Route::get('/', [OperationalReportController::class, 'index'])->name('index');
-        Route::post('/', [OperationalReportController::class, 'store'])->name('store');
-        Route::get('/show', [OperationalReportController::class, 'show'])->name('show');
-        Route::put('/{pelanggan}', [OperationalReportController::class, 'update'])->name('update');
-        Route::delete('/{pelanggan}', [OperationalReportController::class, 'destroy'])->name('destroy');
+   Route::prefix('report/operational')->name('report.operational.')->group(function () {
+    Route::get('/', [OperationalReportController::class, 'index'])->name('index');
+    Route::post('/', [OperationalReportController::class, 'store'])->name('store');
+    Route::get('/show', [OperationalReportController::class, 'show'])->name('show');
+    Route::put('/{pelanggan}', [OperationalReportController::class, 'update'])->name('update');
+    Route::delete('/{pelanggan}', [OperationalReportController::class, 'destroy'])->name('destroy');
 
-        // API endpoints
-        Route::get('/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('get-kabupaten');
-        Route::get('/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('get-kode-fat');
-    });
+    // API endpoints
+    Route::get('/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('get-kabupaten');
+    Route::get('/get-kecamatan', [OperationalReportController::class, 'getKecamatan'])->name('get-kecamatan'); // ✅ Tambahkan ini
+    Route::get('/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('get-kode-fat');
+});
 
     // ================== CUSTOMER ROUTES ================== //
 
@@ -322,44 +323,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         ->name('password-resets.update-expired');
 });
 
-// Route::prefix('report')->middleware('auth')->group(function () {
-
-//     // Operational Report Routes
-//     Route::get('/operational', [OperationalReportController::class, 'index'])
-//         ->name('report.operational.index');
-
-//     Route::post('/operational', [OperationalReportController::class, 'store'])
-//         ->name('report.operational.store');
-
-//     Route::get('/operational/{id}/edit', [OperationalReportController::class, 'edit'])
-//         ->name('report.operational.edit');
-
-//     Route::put('/operational/{id}', [OperationalReportController::class, 'update'])
-//         ->name('report.operational.update');
-
-//     Route::delete('/operational/{id}', [OperationalReportController::class, 'destroy'])
-//         ->name('report.operational.destroy');
-
-//     Route::get('/operational/export', [OperationalReportController::class, 'export'])
-//         ->name('report.operational.export');
-
-//     // Customer Search Routes
-//     Route::get('/customer/search', [CustomerSearchController::class, 'index'])
-//         ->name('customer.search');
-
-//     Route::get('/customer/{id}/edit', [CustomerSearchController::class, 'edit'])
-//         ->name('customer.edit');
-
-//     Route::put('/customer/{id}', [CustomerSearchController::class, 'update'])
-//         ->name('customer.update');
-
-//     Route::delete('/customer/{id}', [CustomerSearchController::class, 'destroy'])
-//         ->name('customer.destroy');
-
-//     Route::get('/customer/map', [CustomerSearchController::class, 'showMap'])
-//         ->name('customer.map');
-// });
-
 // Route untuk halaman operational
 // Route untuk halaman operational
 Route::get('/report/operational', [OperationalReportController::class, 'index'])->name('report.operational.index');
@@ -372,18 +335,18 @@ Route::delete('/report/operational/destroy/{id}', [OperationalReportController::
 
 
 // Route untuk AJAX (dropdown kabupaten dan generate FAT code)
-Route::get('/report/operational/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('report.operational.get-kabupaten');
-Route::get('/report/operational/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('report.operational.get-kode-fat');
-
-Route::get('/get-kabupaten', [App\Http\Controllers\OperationalReportController::class, 'getKabupaten']);
-Route::get('/get-kode-fat', [App\Http\Controllers\OperationalReportController::class, 'getKodeFat']);
-Route::get('/api/kecepatan-by-bandwidth', [OperationalReportController::class, 'getKecepatanByBandwidth']);
-Route::get('/get-kecepatan/{cluster}', [App\Http\Controllers\CompetitorController::class, 'getKecepatan']);
-Route::get('/get-kecepatan-by-bandwidth', [App\Http\Controllers\CompetitorController::class, 'getKecepatanByBandwidth']);
-Route::get('/get-kecepatan', [OperationalReportController::class, 'getKecepatanByBandwidth']);
-Route::get('/get-kecepatan', [App\Http\Controllers\CompetitorController::class, 'getKecepatanByBandwidth'])->name('get.kecepatan');
-Route::get('/operational-report', [OperationalReportController::class, 'index'])->name('operational.index');
-Route::get('/get-kecepatan', [OperationalReportController::class, 'getKecepatan'])->name('get.kecepatan');
+// Route::get('/report/operational/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('report.operational.get-kabupaten');
+// Route::get('/report/operational/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('report.operational.get-kode-fat');
+// // Route::get('/get-kecamatan', [OperationalReportController::class, 'getKecamatan'])->name('get-kecamatan'); 
+// Route::get('/get-kabupaten', [App\Http\Controllers\OperationalReportController::class, 'getKabupaten']);
+// Route::get('/get-kode-fat', [App\Http\Controllers\OperationalReportController::class, 'getKodeFat']);
+// Route::get('/api/kecepatan-by-bandwidth', [OperationalReportController::class, 'getKecepatanByBandwidth']);
+// Route::get('/get-kecepatan/{cluster}', [App\Http\Controllers\CompetitorController::class, 'getKecepatan']);
+// Route::get('/get-kecepatan-by-bandwidth', [App\Http\Controllers\CompetitorController::class, 'getKecepatanByBandwidth']);
+// Route::get('/get-kecepatan', [OperationalReportController::class, 'getKecepatanByBandwidth']);
+// Route::get('/get-kecepatan', [App\Http\Controllers\CompetitorController::class, 'getKecepatanByBandwidth'])->name('get.kecepatan');
+// Route::get('/operational-report', [OperationalReportController::class, 'index'])->name('operational.index');
+// Route::get('/get-kecepatan', [OperationalReportController::class, 'getKecepatan'])->name('get.kecepatan');
 
 
 // ================== EXPORT ROUTES ================== //

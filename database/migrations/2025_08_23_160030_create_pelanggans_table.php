@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('nomor_telepon', 20);
             $table->string('provinsi', 50)->nullable();
             $table->string('kabupaten', 100)->nullable();
+            $table->string('kecamatan', 100)->nullable();
             $table->text('alamat');
             $table->string('cluster', 20);
             $table->string('kode_fat', 50)->nullable();

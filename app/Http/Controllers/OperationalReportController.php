@@ -11,297 +11,358 @@ use Illuminate\Support\Facades\DB;
 
 class OperationalReportController extends Controller
 {
-
-    // ✳ : generator ID harian: IP + yymmdd + 2 digit urut per hari
     private function generateNextCustomerId(): string
     {
-        $today = Carbon::now('Asia/Makassar')->format('ymd'); // 250904
-        $prefix = 'IP' . $today;                              // IP250904
+        $today = Carbon::now('Asia/Makassar')->format('ymd');
+        $prefix = 'IP' . $today;
 
-        // Ambil ID terakhir untuk hari ini lalu increment 2 digit di belakang
         $lastIdToday = Pelanggan::where('id_pelanggan', 'like', $prefix.'%')
             ->orderBy('id_pelanggan', 'desc')
             ->value('id_pelanggan');
 
         $seq = 0;
         if ($lastIdToday) {
-            // Ambil 2 digit paling belakang sebagai urutan
-            $seq = (int)substr($lastIdToday, strlen($prefix)); // contoh '01' -> 1
+            $seq = (int)substr($lastIdToday, strlen($prefix));
         }
 
-        $nextSeq = str_pad((string)($seq + 1), 2, '0', STR_PAD_LEFT); // 01, 02, ...
-        return $prefix . $nextSeq; // contoh: IP25090401
+        $nextSeq = str_pad((string)($seq + 1), 2, '0', STR_PAD_LEFT);
+        return $prefix . $nextSeq;
     }
 
-    // Data provinsi dan kabupaten Indonesia Timur
-    private function getRegionData()
+    private function getRegionDataWithKecamatan()
     {
         return [
             'Bali' => [
-                'Badung' => 'FAT-BDG',
-                'Bangli' => 'FAT-BGL',
-                'Buleleng' => 'FAT-BLL',
-                'Denpasar' => 'FAT-DPS',
-                'Gianyar' => 'FAT-GNY',
-                'Jembrana' => 'FAT-JMB',
-                'Karangasem' => 'FAT-KAS',
-                'Klungkung' => 'FAT-KLK',
-                'Tabanan' => 'FAT-TBN'
+                'Badung' => [
+                    'kecamatan' => ['Kuta', 'Kuta Selatan', 'Kuta Utara', 'Mengwi', 'Abiansemal', 'Petang'],
+                    'kode_fat' => 'FAT-BDG'
+                ],
+                'Bangli' => [
+                    'kecamatan' => ['Bangli', 'Susut', 'Tembuku', 'Kintamani'],
+                    'kode_fat' => 'FAT-BGL'
+                ],
+                'Buleleng' => [
+                    'kecamatan' => ['Singaraja', 'Buleleng', 'Sukasada', 'Sawan', 'Kubutambahan', 'Tejakula', 'Seririt', 'Busungbiu', 'Banjar'],
+                    'kode_fat' => 'FAT-BLL'
+                ],
+                'Denpasar' => [
+                    'kecamatan' => ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan', 'Denpasar Utara'],
+                    'kode_fat' => 'FAT-DPS'
+                ],
+                'Gianyar' => [
+                    'kecamatan' => ['Gianyar', 'Blahbatuh', 'Sukawati', 'Ubud', 'Tegallalang', 'Tampaksiring', 'Payangan'],
+                    'kode_fat' => 'FAT-GNY'
+                ],
+                'Jembrana' => [
+                    'kecamatan' => ['Negara', 'Mendoyo', 'Pekutatan', 'Melaya', 'Jembrana'],
+                    'kode_fat' => 'FAT-JMB'
+                ],
+                'Karangasem' => [
+                    'kecamatan' => ['Karangasem', 'Abang', 'Bebandem', 'Rendang', 'Sidemen', 'Manggis', 'Selat', 'Kubu'],
+                    'kode_fat' => 'FAT-KAS'
+                ],
+                'Klungkung' => [
+                    'kecamatan' => ['Semarapura', 'Banjarangkan', 'Klungkung', 'Dawan'],
+                    'kode_fat' => 'FAT-KLK'
+                ],
+                'Tabanan' => [
+                    'kecamatan' => ['Tabanan', 'Kediri', 'Marga', 'Selemadeg', 'Kerambitan', 'Penebel'],
+                    'kode_fat' => 'FAT-TBN'
+                ]
             ],
             'Nusa Tenggara Barat' => [
-                'Bima' => 'FAT-BIM',
-                'Dompu' => 'FAT-DOM',
-                'Lombok Barat' => 'FAT-LBR',
-                'Lombok Tengah' => 'FAT-LTG',
-                'Lombok Timur' => 'FAT-LTM',
-                'Lombok Utara' => 'FAT-LUT',
-                'Mataram' => 'FAT-MTR',
-                'Sumbawa' => 'FAT-SBW',
-                'Sumbawa Barat' => 'FAT-SBR'
+                'Bima' => [
+                    'kecamatan' => ['Bima', 'Palibelo', 'Donggo', 'Sanggar', 'Woha'],
+                    'kode_fat' => 'FAT-BIM'
+                ],
+                'Dompu' => [
+                    'kecamatan' => ['Dompu', 'Kempo', 'Hu\'u', 'Kilo', 'Woja'],
+                    'kode_fat' => 'FAT-DOM'
+                ],
+                'Lombok Barat' => [
+                    'kecamatan' => ['Gerung', 'Kediri', 'Narmada', 'Lingsar', 'Gunungsari', 'Labuapi', 'Lembar', 'Sekotong', 'Kuripan'],
+                    'kode_fat' => 'FAT-LBR'
+                ],
+                'Lombok Tengah' => [
+                    'kecamatan' => ['Praya', 'Pujut', 'Jonggat', 'Batukliang', 'Kopang', 'Janapria', 'Pringgarata', 'Praya Barat', 'Praya Timur'],
+                    'kode_fat' => 'FAT-LTG'
+                ],
+                'Lombok Timur' => [
+                    'kecamatan' => ['Selong', 'Masbagik', 'Aikmel', 'Pringgabaya', 'Labuhan Haji', 'Sakra', 'Terara', 'Montong Gading', 'Suwela'],
+                    'kode_fat' => 'FAT-LTM'
+                ],
+                'Lombok Utara' => [
+                    'kecamatan' => ['Tanjung', 'Gangga', 'Kayangan', 'Bayan', 'Pemenang'],
+                    'kode_fat' => 'FAT-LUT'
+                ],
+                'Mataram' => [
+                    'kecamatan' => ['Ampenan', 'Mataram', 'Cakranegara', 'Sekarbela', 'Sandubaya', 'Selaparang'],
+                    'kode_fat' => 'FAT-MTR'
+                ],
+                'Sumbawa' => [
+                    'kecamatan' => ['Sumbawa', 'Unter Iwes', 'Moyo Hilir', 'Moyo Hulu', 'Alas', 'Batu Lanteh'],
+                    'kode_fat' => 'FAT-SBW'
+                ],
+                'Sumbawa Barat' => [
+                    'kecamatan' => ['Taliwang', 'Jereweh', 'Sekongkang', 'Maluk', 'Brang Rea'],
+                    'kode_fat' => 'FAT-SBR'
+                ]
             ],
             'Nusa Tenggara Timur' => [
-                'Alor' => 'FAT-ALR',
-                'Belu' => 'FAT-BLU',
-                'Ende' => 'FAT-END',
-                'Flores Timur' => 'FAT-FLT',
-                'Kupang' => 'FAT-KPG',
-                'Lembata' => 'FAT-LMB',
-                'Malaka' => 'FAT-MLK',
-                'Manggarai' => 'FAT-MGG',
-                'Manggarai Barat' => 'FAT-MGB',
-                'Manggarai Timur' => 'FAT-MGT',
-                'Nagekeo' => 'FAT-NGK',
-                'Ngada' => 'FAT-NGD',
-                'Rote Ndao' => 'FAT-RTN',
-                'Sabu Raijua' => 'FAT-SBR',
-                'Sikka' => 'FAT-SKK',
-                'Sumba Barat' => 'FAT-SBT',
-                'Sumba Barat Daya' => 'FAT-SBD',
-                'Sumba Tengah' => 'FAT-STG',
-                'Sumba Timur' => 'FAT-STM',
-                'Timor Tengah Selatan' => 'FAT-TTS',
-                'Timor Tengah Utara' => 'FAT-TTU'
+                'Alor' => [
+                    'kecamatan' => ['Kalabahi', 'Alor Barat Daya', 'Alor Barat Laut', 'Alor Selatan', 'Alor Timur'],
+                    'kode_fat' => 'FAT-ALR'
+                ],
+                'Belu' => [
+                    'kecamatan' => ['Atambua', 'Tasifeto Barat', 'Tasifeto Timur', 'Malaka Barat', 'Malaka Tengah'],
+                    'kode_fat' => 'FAT-BLU'
+                ],
+                'Ende' => [
+                    'kecamatan' => ['Ende', 'Ndona', 'Nangapanda', 'Detusoko', 'Maurole', 'Wolowaru'],
+                    'kode_fat' => 'FAT-END'
+                ],
+                'Flores Timur' => [
+                    'kecamatan' => ['Larantuka', 'Ile Mandiri', 'Tanjung Bunga', 'Solor Timur', 'Solor Barat', 'Adonara Timur'],
+                    'kode_fat' => 'FAT-FLT'
+                ],
+                'Kupang' => [
+                    'kecamatan' => ['Kupang Tengah', 'Kupang Barat', 'Kupang Timur', 'Amarasi', 'Nekamese', 'Sulamu', 'Amfoang Selatan', 'Amfoang Utara'],
+                    'kode_fat' => 'FAT-KPG'
+                ]
             ]
         ];
     }
 
+    private function getRegionData()
+    {
+        $fullData = $this->getRegionDataWithKecamatan();
+        $result = [];
+        
+        foreach ($fullData as $provinsi => $kabupatenData) {
+            foreach ($kabupatenData as $kabupaten => $data) {
+                $result[$provinsi][$kabupaten] = $data['kode_fat'];
+            }
+        }
+        
+        return $result;
+    }
+
     public function index()
     {
-    // Ambil semua data pelanggan untuk ditampilkan di tabel
-    $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
-
-    // Ambil data paket & region (sesuai yang kamu pakai di blade)
-    $pakets = Competitor::select('paket')->distinct()->get();
-    $regionData = $this->getRegionData();
-
-        // $lastId = Pelanggan::max('id_pelanggan');              // ❌ hapus cara lama (angka)
-        // $nextId = $lastId ? $lastId + 1 : 1;                   // ❌ hapus
-
-        $nextId = $this->generateNextCustomerId();               // ✳ ADD: preview ID format baru
+        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
+        $pakets = Competitor::select('paket')->distinct()->get();
+        $regionData = $this->getRegionData();
+        $nextId = $this->generateNextCustomerId();
 
         return view('report.operational.index', compact('pelanggans', 'pakets', 'regionData', 'nextId'));
     }
 
-    // API untuk mendapatkan kabupaten berdasarkan provinsi - DENGAN DEBUGGING
-    // ⬇ Tambahkan method create() di sini
-    public function create()
-    {
-    $nextId = $this->generateNextCustomerId(); // ✅ langsung panggil fungsi generator
-
-    // Ambil data tambahan untuk form (jika dibutuhkan)
-    $regionData = $this->getRegionData();
-    $pakets = Competitor::select('paket')->distinct()->pluck('paket');
-
-    // arahkan ke view form create
-    return view('report.operational.create', compact('nextId', 'regionData', 'pakets'));
-}
     public function getKabupaten(Request $request)
     {
         try {
             $provinsi = $request->input('provinsi');
 
-            // Log untuk debugging
-            Log::info('Get Kabupaten Request:', [
-                'provinsi' => $provinsi,
-                'all_params' => $request->all(),
-                'method' => $request->method(),
-                'url' => $request->fullUrl()
-            ]);
-
-            // Validasi input
             if (empty($provinsi)) {
-                Log::warning('Empty provinsi parameter');
                 return response()->json([
+                    'success' => false,
                     'kabupaten' => [],
                     'error' => 'Provinsi parameter is required'
                 ], 400);
             }
 
-            $regionData = $this->getRegionData();
-
-            // Log data region untuk debugging
-            Log::info('Region Data Available:', [
-                'provinces' => array_keys($regionData)
-            ]);
+            $regionData = $this->getRegionDataWithKecamatan();
 
             if (isset($regionData[$provinsi])) {
                 $kabupaten = array_keys($regionData[$provinsi]);
 
-                Log::info('Kabupaten Found:', [
-                    'provinsi' => $provinsi,
-                    'kabupaten_count' => count($kabupaten),
-                    'kabupaten' => $kabupaten
-                ]);
-
                 return response()->json([
-                    'kabupaten' => $kabupaten,
-                    'success' => true
+                    'success' => true,
+                    'kabupaten' => $kabupaten
                 ]);
             }
 
-            Log::warning('Provinsi not found:', [
-                'requested_provinsi' => $provinsi,
-                'available_provinces' => array_keys($regionData)
-            ]);
-
             return response()->json([
+                'success' => false,
                 'kabupaten' => [],
-                'error' => 'Provinsi not found',
-                'available_provinces' => array_keys($regionData)
-            ]);
+                'error' => 'Provinsi not found'
+            ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Get Kabupaten Error:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            Log::error('Get Kabupaten Error:', ['error' => $e->getMessage()]);
             return response()->json([
+                'success' => false,
                 'kabupaten' => [],
-                'error' => 'Internal server error: ' . $e->getMessage()
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    // API untuk mendapatkan kode FAT berdasarkan provinsi dan kabupaten - DENGAN DEBUGGING
-    public function getKodeFat(Request $request)
+    public function getKecamatan(Request $request)
     {
         try {
             $provinsi = $request->input('provinsi');
             $kabupaten = $request->input('kabupaten');
 
-            // Log untuk debugging
-            Log::info('Get Kode FAT Request:', [
-                'provinsi' => $provinsi,
-                'kabupaten' => $kabupaten,
-                'all_params' => $request->all()
-            ]);
-
-            // Validasi input
-            if (empty($provinsi) || empty($kabupaten)) {
-                return response()->json([
-                    'kode_fat' => '',
-                    'error' => 'Provinsi and kabupaten parameters are required'
-                ], 400);
-            }
-
-            $regionData = $this->getRegionData();
-
-            if (isset($regionData[$provinsi][$kabupaten])) {
-                // Ambil jumlah pelanggan yang sudah ada di kabupaten ini untuk numbering
-                $count = Pelanggan::where('provinsi', $provinsi)
-                                 ->where('kabupaten', $kabupaten)
-                                 ->count();
-
-                $kodeFat = $regionData[$provinsi][$kabupaten] . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-
-                Log::info('Kode FAT Generated:', [
-                    'provinsi' => $provinsi,
-                    'kabupaten' => $kabupaten,
-                    'existing_count' => $count,
-                    'kode_fat' => $kodeFat
-                ]);
-
-                return response()->json([
-                    'kode_fat' => $kodeFat,
-                    'success' => true
-                ]);
-            }
-
-            Log::warning('Provinsi/Kabupaten combination not found:', [
+            Log::info('Get Kecamatan Request:', [
                 'provinsi' => $provinsi,
                 'kabupaten' => $kabupaten
             ]);
 
+            if (empty($provinsi) || empty($kabupaten)) {
+                return response()->json([
+                    'success' => false,
+                    'kecamatan' => [],
+                    'error' => 'Provinsi dan kabupaten harus dipilih'
+                ], 400);
+            }
+
+            $regionData = $this->getRegionDataWithKecamatan();
+
+            if (isset($regionData[$provinsi][$kabupaten]['kecamatan'])) {
+                $kecamatanList = $regionData[$provinsi][$kabupaten]['kecamatan'];
+
+                Log::info('Kecamatan Found:', [
+                    'provinsi' => $provinsi,
+                    'kabupaten' => $kabupaten,
+                    'kecamatan_count' => count($kecamatanList),
+                    'kecamatan' => $kecamatanList
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'kecamatan' => $kecamatanList
+                ]);
+            }
+
             return response()->json([
-                'kode_fat' => '',
-                'error' => 'Provinsi/Kabupaten combination not found'
-            ]);
+                'success' => false,
+                'kecamatan' => [],
+                'error' => 'Data kecamatan tidak ditemukan'
+            ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Get Kode FAT Error:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Get Kecamatan Error:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'kecamatan' => [],
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getKodeFat(Request $request)
+{
+    try {
+        $provinsi = $request->input('provinsi');
+        $kabupaten = $request->input('kabupaten');
+        $kecamatan = $request->input('kecamatan');
+
+        Log::info('Get Kode FAT Request:', [
+            'provinsi' => $provinsi,
+            'kabupaten' => $kabupaten,
+            'kecamatan' => $kecamatan
+        ]);
+
+        if (empty($provinsi) || empty($kabupaten)) {
+            return response()->json([
+                'success' => false,
+                'kode_fat' => '',
+                'error' => 'Provinsi dan kabupaten harus dipilih'
+            ], 400);
+        }
+
+        $regionData = $this->getRegionDataWithKecamatan();
+
+        if (isset($regionData[$provinsi][$kabupaten])) {
+            $baseFat = $regionData[$provinsi][$kabupaten]['kode_fat'];
+            
+            // Query untuk menghitung jumlah pelanggan
+            $query = Pelanggan::where('provinsi', $provinsi)
+                             ->where('kabupaten', $kabupaten);
+            
+            if (!empty($kecamatan)) {
+                // Jika kecamatan dipilih, tambahkan ke filter
+                $query->where('kecamatan', $kecamatan);
+                $count = $query->count();
+                
+                // Ambil 3 karakter pertama dari kecamatan dan uppercase
+                $kecamatanCode = strtoupper(substr($kecamatan, 0, 3));
+                
+                // Format: FAT-XXX-YYY-001
+                $kodeFat = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
+            } else {
+                // Jika kecamatan tidak dipilih
+                $count = $query->count();
+                $kodeFat = sprintf("%s-%03d", $baseFat, $count + 1);
+            }
+
+            Log::info('Kode FAT Generated:', [
+                'kode_fat' => $kodeFat,
+                'count' => $count
             ]);
 
             return response()->json([
-                'kode_fat' => '',
-                'error' => 'Internal server error: ' . $e->getMessage()
-            ], 500);
+                'success' => true,
+                'kode_fat' => $kodeFat
+            ]);
         }
-        // Ambil data pelanggan agar bisa ditampilkan di tabel
-        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->paginate(10);
 
-        // Ambil data competitor untuk dropdown cluster dan kecepatan
-        $competitors = Competitor::select('cluster', 'kecepatan')->distinct()->get();
+        return response()->json([
+            'success' => false,
+            'kode_fat' => '',
+            'error' => 'Data provinsi/kabupaten tidak ditemukan'
+        ], 404);
 
-        return view('report.operational.index', compact('pelanggans', 'competitors'));
+    } catch (\Exception $e) {
+        Log::error('Get Kode FAT Error:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'kode_fat' => '',
+            'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
     }
-
-    // Method untuk mendapatkan kecepatan berdasarkan cluster via AJAX
-    public function getKecepatanByBandwidth(Request $request)
-    {
-        $kecepatan = $request->get('kecepatan');
-
-        $paket = Competitor::where('kecepatan', $kecepatan)
-                        ->select('speed')
-                        ->distinct()
-                        ->pluck('speed');
-
-        return response()->json($paket);
-    }
-
+}
 
     public function store(Request $request)
     {
-
         $validated = $request->validate([
             'nama_pelanggan' => 'required|string|max:255',
             'bandwidth'      => 'required|string|max:100',
             'alamat'         => 'required|string',
             'provinsi'       => 'required|string|max:100',
             'kabupaten'      => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
             'nomor_telepon'  => 'required|string|max:50',
-            'cluster'        => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
         ]);
 
         $validated['id_pelanggan'] = $this->generateNextCustomerId();
-
-        // Otomatis isi kecepatan sama dengan bandwidth pelanggan
         $validated['kecepatan'] = [$validated['bandwidth']];
 
         // Generate kode FAT otomatis jika kosong
         if (empty($validated['kode_fat'])) {
-            $regionData = $this->getRegionData();
+            $regionData = $this->getRegionDataWithKecamatan();
             if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
-                $count = Pelanggan::where('provinsi', $validated['provinsi'])
-                                 ->where('kabupaten', $validated['kabupaten'])
-                                 ->count();
-
-                $validated['kode_fat'] = $regionData[$validated['provinsi']][$validated['kabupaten']] . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+                $baseFat = $regionData[$validated['provinsi']][$validated['kabupaten']]['kode_fat'];
+                
+                $query = Pelanggan::where('provinsi', $validated['provinsi'])
+                                 ->where('kabupaten', $validated['kabupaten']);
+                
+                if (!empty($validated['kecamatan'])) {
+                    $query->where('kecamatan', $validated['kecamatan']);
+                    $count = $query->count();
+                    $kecamatanCode = strtoupper(substr($validated['kecamatan'], 0, 3));
+                    $validated['kode_fat'] = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
+                } else {
+                    $count = $query->count();
+                    $validated['kode_fat'] = sprintf("%s-%03d", $baseFat, $count + 1);
+                }
             }
         }
 
@@ -321,19 +382,13 @@ class OperationalReportController extends Controller
     public function edit($id)
     {
         try {
-            // Cari berdasarkan id_pelanggan
             $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
-
-            // Data region untuk dropdown
             $regionData = $this->getRegionData();
-
-            Log::info("Form edit dibuka untuk pelanggan: {$pelanggan->nama_pelanggan} (ID: {$id})");
 
             return view('report.operational.edit', compact('pelanggan', 'regionData'));
 
         } catch (\Exception $e) {
             Log::error("Gagal membuka form edit pelanggan ID {$id}: " . $e->getMessage());
-
             return redirect()
                 ->route('report.operational.index')
                 ->withErrors(['error' => 'Data pelanggan tidak ditemukan. ID: ' . $id]);
@@ -342,17 +397,11 @@ class OperationalReportController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Log untuk debugging
-        Log::info("Attempting to update pelanggan with ID: {$id}");
-        Log::info("Request data: " . json_encode($request->all()));
-
-        // Validasi input
         $validated = $request->validate([
             'id_pelanggan'   => [
                 'required',
                 'string',
                 'max:100',
-                // Unique validation yang benar untuk primary key non-increment
                 \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
             ],
             'nama_pelanggan' => 'required|string|max:255',
@@ -360,32 +409,17 @@ class OperationalReportController extends Controller
             'nomor_telepon'  => 'required|string|max:50',
             'provinsi'       => 'required|string|max:100',
             'kabupaten'      => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'cluster'        => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
-        ], [
-            'id_pelanggan.required' => 'ID Pelanggan wajib diisi',
-            'id_pelanggan.unique' => 'ID Pelanggan sudah digunakan oleh pelanggan lain',
-            'nama_pelanggan.required' => 'Nama Pelanggan wajib diisi',
-            'bandwidth.required' => 'Bandwidth wajib diisi',
-            'nomor_telepon.required' => 'Nomor Telepon wajib diisi',
-            'provinsi.required' => 'Provinsi wajib dipilih',
-            'kabupaten.required' => 'Kabupaten wajib dipilih',
-            'alamat.required' => 'Alamat wajib diisi',
-            'cluster.required' => 'Cluster wajib dipilih',
-            'latitude.between' => 'Latitude harus antara -90 sampai 90',
-            'longitude.between' => 'Longitude harus antara -180 sampai 180',
         ]);
 
         try {
-            // Cari pelanggan berdasarkan id_pelanggan
             $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
 
-            // Jika ID pelanggan diubah, perlu update primary key
             if ($validated['id_pelanggan'] !== $id) {
-                // Cek apakah ID baru sudah ada
                 $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
                 if ($exists) {
                     return redirect()
@@ -394,7 +428,6 @@ class OperationalReportController extends Controller
                         ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
                 }
 
-                // Hapus data lama dan buat baru dengan ID baru
                 DB::transaction(function () use ($pelanggan, $validated) {
                     $oldId = $pelanggan->id_pelanggan;
                     $pelanggan->delete();
@@ -402,31 +435,19 @@ class OperationalReportController extends Controller
                     Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
                 });
             } else {
-                // Update biasa jika ID tidak berubah
                 $pelanggan->update($validated);
             }
-
-            Log::info("Data pelanggan berhasil diupdate: {$validated['nama_pelanggan']} (ID: {$validated['id_pelanggan']})");
 
             return redirect()
                 ->route('report.operational.index')
                 ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error("Pelanggan tidak ditemukan dengan ID: {$id}");
-
-            return redirect()
-                ->route('report.operational.index')
-                ->withErrors(['error' => 'Data pelanggan tidak ditemukan']);
-
         } catch (\Exception $e) {
             Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
-
             return redirect()
                 ->back()
                 ->withInput()
-                ->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }
 
@@ -436,8 +457,22 @@ class OperationalReportController extends Controller
             $pelangganData = Pelanggan::findOrFail($pelanggan);
             $nama = $pelangganData->nama_pelanggan;
             $pelangganData->delete();
+            
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Data pelanggan {$nama} berhasil dihapus!"
+                ]);
+            }
+            
             return back()->with('success', "Data pelanggan {$nama} berhasil dihapus!");
         } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }

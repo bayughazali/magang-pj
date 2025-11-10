@@ -24,6 +24,7 @@ class Pelanggan extends Model
         'alamat',
         'provinsi',        // Field baru
         'kabupaten',       // Field baru
+        'kecamatan',  
         'latitude',
         'longitude',
         'nomor_telepon',

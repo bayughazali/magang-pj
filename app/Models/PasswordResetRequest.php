@@ -7,12 +7,14 @@ use Carbon\Carbon;
 
 class PasswordResetRequest extends Model
 {
+    protected $table = 'password_reset_codes'; // atau 'password_reset_requests'
+    
     protected $fillable = [
         'email',
         'code',
         'status',
         'expires_at',
-        'used_at'
+        'used_at',
     ];
 
     protected $casts = [
@@ -20,56 +22,26 @@ class PasswordResetRequest extends Model
         'used_at' => 'datetime',
     ];
 
-    /**
-     * Relasi ke User
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'email', 'email');
-    }
-
-    /**
-     * Cek apakah kode sudah expired
-     */
-    public function isExpired()
+    // Check if code is expired
+    public function isExpired(): bool
     {
         return Carbon::now()->greaterThan($this->expires_at);
     }
 
-    /**
-     * Cek apakah kode masih valid
-     */
-    public function isValid()
-    {
-        return $this->status === 'pending' && !$this->isExpired();
-    }
-
-    /**
-     * Tandai sebagai sudah digunakan
-     */
-    public function markAsUsed()
+    // Mark as used
+    public function markAsUsed(): void
     {
         $this->update([
             'status' => 'used',
-            'used_at' => now()
+            'used_at' => Carbon::now(),
         ]);
     }
 
-    /**
-     * Scope untuk filter request yang masih pending
-     */
-    public function scopePending($query)
+    // Mark as expired
+    public function markAsExpired(): void
     {
-        return $query->where('status', 'pending')
-                     ->where('expires_at', '>', now());
-    }
-
-    /**
-     * Scope untuk filter request yang sudah expired
-     */
-    public function scopeExpired($query)
-    {
-        return $query->where('status', 'pending')
-                     ->where('expires_at', '<=', now());
+        $this->update([
+            'status' => 'expired',
+        ]);
     }
 }
