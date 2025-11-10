@@ -45,17 +45,19 @@
                         <input type="date" name="tanggal" class="form-control"
                                value="{{ old('tanggal') }}" required>
                     </div>
-                    {{-- <div class="form-group mb-3">
+                    <div class="form-group mb-3">
                         <label>Lokasi</label>
                         <input type="text" name="lokasi" class="form-control" placeholder="Contoh: Bondowoso"
                                value="{{ old('lokasi') }}" required>
-                    </div> --}}
+                    </div>
 
-                    {{-- Blok Cluster --}}
+                    {{-- [DIUBAH] Blok Cluster untuk Form Tambah --}}
                     <div class="form-group mb-3">
                         <label>Cluster</label>
                         <select name="cluster" class="form-control select2" required>
                             <option value="">-- Pilih Cluster --</option>
+
+                            {{-- Loop baru menggunakan optgroup --}}
                             @foreach($competitors as $provinsi => $kabupatens)
                                 <optgroup label="{{ $provinsi }}">
                                     @foreach($kabupatens as $namaKab => $kecamatans)
@@ -68,8 +70,11 @@
                                     @endforeach
                                 </optgroup>
                             @endforeach
+                            {{-- Akhir loop baru --}}
+
                         </select>
                     </div>
+                    {{-- [SELESAI DIUBAH] --}}
 
                     <div class="form-group mb-3">
                         <label>Evidence (Foto Progress)</label>
@@ -100,6 +105,9 @@
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <span>Daftar Report Activity ({{ count($reports) }} data)</span>
+                 {{-- <a href="{{ route('reports.exportPdf') }}" class="btn btn-sm btn-light">
+                     <i class="fas fa-file-pdf"></i> Export PDF
+                 </a> --}}
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -110,8 +118,8 @@
                                 <th width="10%">Sales</th>
                                 <th width="15%">Aktivitas</th>
                                 <th width="10%">Tanggal</th>
-                                {{-- <th width="10%">Lokasi</th> --}}
-                                <th width="8%">Lokasi (Cluster)</th>
+                                <th width="10%">Lokasi</th>
+                                <th width="8%">Cluster</th>
                                 <th width="10%">Evidence</th>
                                 <th width="20%">Hasil / Kendala</th>
                                 <th width="8%">Status</th>
@@ -127,7 +135,7 @@
                                     <td>{{ $report->sales }}</td>
                                     <td>{{ Str::limit($report->aktivitas, 20) }}</td>
                                     <td>{{ \Carbon\Carbon::parse($report->tanggal)->format('d/m/Y') }}</td>
-                                    {{-- <td>{{ $report->lokasi }}</td> --}}
+                                    <td>{{ $report->lokasi }}</td>
                                     <td>{{ $report->cluster }}</td>
                                     <td class="text-center">
                                         @if($report->evidence && Storage::disk('public')->exists($report->evidence))
@@ -151,11 +159,15 @@
                                         </span>
                                     </td>
 
+                                    {{-- Kolom Aksi: Hanya muncul jika user adalah admin --}}
                                     @if(auth()->user()->role === 'admin')
                                         <td>
+                                            {{-- Tombol Edit --}}
                                             <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $report->id }}">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
+
+                                            {{-- Tombol Hapus --}}
                                             <form action="{{ route('reports.destroy', $report->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -168,6 +180,7 @@
                                     @endif
                                 </tr>
 
+                                {{-- Modal Edit: Hanya perlu di-render jika user adalah admin --}}
                                 @if(auth()->user()->role === 'admin')
                                     <div class="modal fade" id="editModal{{ $report->id }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
@@ -198,15 +211,18 @@
                                                             <label>Aktivitas</label>
                                                             <input type="text" name="aktivitas" class="form-control" value="{{ $report->aktivitas }}" required>
                                                         </div>
-                                                        {{-- <div class="mb-3">
+                                                        <div class="mb-3">
                                                             <label>Lokasi</label>
                                                             <input type="text" name="lokasi" class="form-control" value="{{ $report->lokasi }}" required>
-                                                        </div> --}}
+                                                        </div>
 
+                                                        {{-- [DIUBAH] Blok Cluster untuk Modal Edit --}}
                                                         <div class="mb-3">
                                                             <label>Cluster</label>
                                                             <select name="cluster" class="form-control select2" required style="width: 100%;">
                                                                 <option value="">-- Pilih Cluster --</option>
+
+                                                                {{-- Loop baru menggunakan optgroup --}}
                                                                 @foreach($competitors as $provinsi => $kabupatens)
                                                                     <optgroup label="{{ $provinsi }}">
                                                                         @foreach($kabupatens as $namaKab => $kecamatans)
@@ -219,8 +235,11 @@
                                                                         @endforeach
                                                                     </optgroup>
                                                                 @endforeach
+                                                                {{-- Akhir loop baru --}}
+
                                                             </select>
                                                         </div>
+                                                        {{-- [SELESAI DIUBAH] --}}
 
                                                         <div class="mb-3">
                                                             <label>Evidence (Opsional)</label><br>
@@ -264,7 +283,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforelse
+                            @endforGantielse
                         </tbody>
                     </table>
                 </div>
@@ -293,11 +312,18 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Inisialisasi Select2 untuk form tambah
     $('.select2').select2({ placeholder: 'Cari cluster…', width: '100%' });
+
+    // [PENTING] Re-inisialisasi Select2 di dalam modal SETELAH modalnya muncul
+    // Loop untuk setiap modal edit yang ada di halaman
     document.querySelectorAll('.modal').forEach(function(modalElement) {
         modalElement.addEventListener('shown.bs.modal', function () {
+            // Kita cari select2 di DALAM modal yang sedang aktif ini
             var selectInModal = modalElement.querySelector('.select2');
             if (selectInModal) {
+                // Hancurkan dulu (jika sudah ada) dan inisialisasi ulang
+                // dengan dropdownParent menunjuk ke modal
                 $(selectInModal).select2('destroy');
                 $(selectInModal).select2({
                     placeholder: 'Cari cluster…',

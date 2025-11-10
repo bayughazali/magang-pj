@@ -94,16 +94,16 @@ Route::middleware('auth')->group(function () {
 
         // Tambahkan routes ini ke file routes/web.php
 
-        // Report Activity Routes
-        Route::get('/reports/activity', [ReportActivityController::class, 'index'])->name('reports.activity');
-        Route::post('/reports/store', [ReportActivityController::class, 'store'])->name('reports.store');
-        Route::put('/reports/{id}', [ReportActivityController::class, 'update'])->name('reports.update');
-        Route::delete('/reports/{id}', [ReportActivityController::class, 'destroy'])->name('reports.destroy');
-        Route::get('/reports/export-pdf', [ReportActivityController::class, 'exportPdf'])->name('reports.exportPdf');
+// Report Activity Routes
+Route::get('/reports/activity', [ReportActivityController::class, 'index'])->name('reports.activity');
+Route::post('/reports/store', [ReportActivityController::class, 'store'])->name('reports.store');
+Route::put('/reports/{id}', [ReportActivityController::class, 'update'])->name('reports.update');
+Route::delete('/reports/{id}', [ReportActivityController::class, 'destroy'])->name('reports.destroy');
+Route::get('/reports/export-pdf', [ReportActivityController::class, 'exportPdf'])->name('reports.exportPdf');
 
-        // AJAX Routes untuk dynamic dropdown (opsional - jika ingin menggunakan AJAX)
-        Route::get('/api/kabupaten/{provinsi}', [ReportActivityController::class, 'getKabupaten'])->name('api.kabupaten');
-        Route::get('/api/kecamatan/{provinsi}/{kabupaten}', [ReportActivityController::class, 'getKecamatan'])->name('api.kecamatan');
+// AJAX Routes untuk dynamic dropdown (opsional - jika ingin menggunakan AJAX)
+Route::get('/api/kabupaten/{provinsi}', [ReportActivityController::class, 'getKabupaten'])->name('api.kabupaten');
+Route::get('/api/kecamatan/{provinsi}/{kabupaten}', [ReportActivityController::class, 'getKecamatan'])->name('api.kecamatan');
 
         // Export routes
         Route::get('/activity/export-pdf', [ReportActivityController::class, 'exportPdf'])->name('exportPdf');

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('aktivitas');
             $table->date('tanggal');
 
+
             // [DIUBAH] Mengganti enum menjadi string agar bisa menyimpan data lokasi yang panjang
             $table->string('cluster');
 

@@ -291,8 +291,8 @@
             </div>
           </div>
         </div>
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item text">
+        <ul class="navbar-nav mr-auto text">
+          <li class="nav-item">
             <a href="{{ route('login') }}" class="nav-link nav-link-enhanced">
               <span class="nav-link-inner--text">Login</span>
             </a>

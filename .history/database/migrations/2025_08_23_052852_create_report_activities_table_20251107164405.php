@@ -16,16 +16,11 @@ return new class extends Migration
             $table->string('sales');
             $table->string('aktivitas');
             $table->date('tanggal');
-
-            // [DIUBAH] Mengganti enum menjadi string agar bisa menyimpan data lokasi yang panjang
-            $table->string('cluster');
-
+            $table->string('lokasi');
+            $table->enum('cluster', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'])->nullable(); // hilangkan ->after('lokasi')
             $table->string('evidence')->nullable(); // untuk foto progress
             $table->text('hasil_kendala')->nullable();
-
-            // [DIUBAH] Mengganti ke lowercase agar sesuai dengan validasi controller ('selesai', 'proses')
-            $table->enum('status', ['selesai', 'proses'])->default('proses');
-
+            $table->enum('status', ['Selesai', 'Proses'])->default('Proses');
             $table->timestamps();
         });
     }

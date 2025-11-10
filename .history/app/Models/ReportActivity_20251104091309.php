@@ -17,6 +17,7 @@ class ReportActivity extends Model
     'sales',
     'aktivitas',
     'tanggal',
+    'lokasi',
     'cluster',
     'evidence',
     'hasil_kendala',

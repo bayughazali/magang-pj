@@ -262,7 +262,7 @@
         margin: 20px;
         border-radius: 16px;
       }
-
+      
       .shape {
         display: none;
       }
@@ -292,7 +292,7 @@
           </div>
         </div>
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item text">
+          <li class="nav-item">
             <a href="{{ route('login') }}" class="nav-link nav-link-enhanced">
               <span class="nav-link-inner--text">Login</span>
             </a>
@@ -317,15 +317,15 @@
         <div class="shape"></div>
         <div class="shape"></div>
       </div>
-
+      
       <div class="container" style="position: relative; z-index: 5;">
         <div class="header-body text-center mb-7">
           <div class="row justify-content-center">
             <div class="col-xl-5 col-lg-6 col-md-8 px-5">
               <div class="company-logo">
-                <h5 class="text-white mb-0">PT PLN ICON PLUS BALI</h5>
+                <h5 class="text-white mb-0">PT ICONET BALI</h5>
               </div>
-              <h1 class="text-white welcome-text mb-4" style="font-size: 3rem; font-weight: 700;">Selamat Datang!</h1>
+              <h1 class="text-white welcome-text mb-4" style="font-size: 3rem; font-weight: 700;">Welcome!</h1>
               <p class="text-lead text-white" style="font-size: 1.2rem; opacity: 0.9;">Silakan login dengan email & password Anda untuk mengakses sistem</p>
             </div>
           </div>
@@ -381,7 +381,7 @@
 
               <form method="POST" action="{{ route('login.post') }}">
                 @csrf
-
+                
                 <!-- Email Input -->
                 <div class="input-group-enhanced">
                   <div class="input-icon">
@@ -419,7 +419,7 @@
               </form>
             </div>
           </div>
-
+          
           <!-- Footer Links -->
           <div class="footer-links mt-4 text-center">
             <div class="row">
@@ -471,7 +471,7 @@
       togglePassword.addEventListener('click', function() {
         const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
-
+        
         // Toggle eye icon - menggunakan icon yang sama dengan register
         if (type === 'text') {
           eyeIcon.className = 'ni ni-fat-add'; // Password terlihat (mata terbuka)
@@ -495,7 +495,7 @@
         input.addEventListener('focus', function() {
           this.parentElement.style.transform = 'translateY(-2px)';
         });
-
+        
         input.addEventListener('blur', function() {
           this.parentElement.style.transform = 'translateY(0)';
         });

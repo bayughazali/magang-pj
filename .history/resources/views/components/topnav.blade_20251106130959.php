@@ -2,8 +2,8 @@
   <div class="container-fluid">
 
     <!-- Brand -->
-    <a class="navbar-brand d-flex align-items-center">
-      <img src="{{ asset('/') }}argonpro/assets/img/brand/pln iconplus.png"
+    <a class="navbar-brand d-flex align-items-center" href="{{ route('dashboard') }}">
+      <img src="argonpro/assets/img/brand/pln iconplus.png"
            class="navbar-brand-img mr-2" alt="logo" style="height:50px;">
     </a>
 

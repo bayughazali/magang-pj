@@ -126,6 +126,7 @@ class ReportActivityController extends Controller
             'sales' => 'required|string|max:255',
             'aktivitas' => 'required|string|max:255',
             'tanggal' => 'required|date',
+            'lokasi' => 'required|string|max:255',
             'cluster' => 'required|string|max:255',
             'evidence' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             'hasil_kendala' => 'nullable|string',

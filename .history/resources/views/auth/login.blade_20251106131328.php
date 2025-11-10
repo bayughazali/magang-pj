@@ -292,7 +292,7 @@
           </div>
         </div>
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item text">
+          <li class="nav-item">
             <a href="{{ route('login') }}" class="nav-link nav-link-enhanced">
               <span class="nav-link-inner--text">Login</span>
             </a>
@@ -325,7 +325,7 @@
               <div class="company-logo">
                 <h5 class="text-white mb-0">PT PLN ICON PLUS BALI</h5>
               </div>
-              <h1 class="text-white welcome-text mb-4" style="font-size: 3rem; font-weight: 700;">Selamat Datang!</h1>
+              <h1 class="text-white welcome-text mb-4" style="font-size: 3rem; font-weight: 700;">Welcome!</h1>
               <p class="text-lead text-white" style="font-size: 1.2rem; opacity: 0.9;">Silakan login dengan email & password Anda untuk mengakses sistem</p>
             </div>
           </div>

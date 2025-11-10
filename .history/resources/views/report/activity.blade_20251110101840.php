@@ -45,11 +45,11 @@
                         <input type="date" name="tanggal" class="form-control"
                                value="{{ old('tanggal') }}" required>
                     </div>
-                    {{-- <div class="form-group mb-3">
+                    <div class="form-group mb-3">
                         <label>Lokasi</label>
                         <input type="text" name="lokasi" class="form-control" placeholder="Contoh: Bondowoso"
                                value="{{ old('lokasi') }}" required>
-                    </div> --}}
+                    </div>
 
                     {{-- Blok Cluster --}}
                     <div class="form-group mb-3">

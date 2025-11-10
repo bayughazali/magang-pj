@@ -45,11 +45,11 @@
                         <input type="date" name="tanggal" class="form-control"
                                value="{{ old('tanggal') }}" required>
                     </div>
-                    {{-- <div class="form-group mb-3">
+                    <div class="form-group mb-3">
                         <label>Lokasi</label>
                         <input type="text" name="lokasi" class="form-control" placeholder="Contoh: Bondowoso"
                                value="{{ old('lokasi') }}" required>
-                    </div> --}}
+                    </div>
 
                     {{-- Blok Cluster --}}
                     <div class="form-group mb-3">
@@ -127,7 +127,7 @@
                                     <td>{{ $report->sales }}</td>
                                     <td>{{ Str::limit($report->aktivitas, 20) }}</td>
                                     <td>{{ \Carbon\Carbon::parse($report->tanggal)->format('d/m/Y') }}</td>
-                                    {{-- <td>{{ $report->lokasi }}</td> --}}
+                                    <td>{{ $report->lokasi }}</td>
                                     <td>{{ $report->cluster }}</td>
                                     <td class="text-center">
                                         @if($report->evidence && Storage::disk('public')->exists($report->evidence))

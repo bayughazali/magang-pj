@@ -16,16 +16,19 @@ return new class extends Migration
             $table->string('sales');
             $table->string('aktivitas');
             $table->date('tanggal');
+            $table->string('lokasi');
 
-            // [DIUBAH] Mengganti enum menjadi string agar bisa menyimpan data lokasi yang panjang
-            $table->string('cluster');
+            // Kolom wilayah baru (Provinsi, Kabupaten, Kecamatan)
+            $table->string('provinsi')->nullable();
+            $table->string('kabupaten')->nullable();
+            $table->string('kecamatan')->nullable();
+
+            // Kolom cluster lama - bisa dihapus atau dipertahankan untuk backward compatibility
+            // $table->enum('cluster', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'])->nullable();
 
             $table->string('evidence')->nullable(); // untuk foto progress
             $table->text('hasil_kendala')->nullable();
-
-            // [DIUBAH] Mengganti ke lowercase agar sesuai dengan validasi controller ('selesai', 'proses')
             $table->enum('status', ['selesai', 'proses'])->default('proses');
-
             $table->timestamps();
         });
     }

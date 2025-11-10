@@ -1,6 +1,62 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Toggle Switch CSS */
+.status-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 28px;
+}
+
+.status-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.status-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ffc107;
+    transition: .4s;
+    border-radius: 28px;
+}
+
+.status-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .status-slider {
+    background-color: #28a745;
+}
+
+input:checked + .status-slider:before {
+    transform: translateX(32px);
+}
+
+.status-label {
+    font-size: 11px;
+    font-weight: bold;
+    display: block;
+    text-align: center;
+    margin-top: 2px;
+}
+</style>
+
 <div class="row">
     {{-- Form Tambah Report --}}
     <div class="col-md-4">
@@ -45,11 +101,6 @@
                         <input type="date" name="tanggal" class="form-control"
                                value="{{ old('tanggal') }}" required>
                     </div>
-                    {{-- <div class="form-group mb-3">
-                        <label>Lokasi</label>
-                        <input type="text" name="lokasi" class="form-control" placeholder="Contoh: Bondowoso"
-                               value="{{ old('lokasi') }}" required>
-                    </div> --}}
 
                     {{-- Blok Cluster --}}
                     <div class="form-group mb-3">
@@ -83,11 +134,15 @@
                     </div>
                     <div class="form-group mb-3">
                         <label>Status</label>
-                        <select name="status" class="form-control" required>
-                            <option value="">-- Pilih Status --</option>
-                            <option value="selesai" {{ old('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                            <option value="proses" {{ old('status') == 'proses' ? 'selected' : '' }}>Proses</option>
-                        </select>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">Proses</span>
+                            <label class="status-toggle">
+                                <input type="checkbox" name="status_toggle" value="selesai" {{ old('status') == 'selesai' ? 'checked' : '' }}>
+                                <span class="status-slider"></span>
+                            </label>
+                            <span class="ms-2">Selesai</span>
+                            <input type="hidden" name="status" value="{{ old('status', 'proses') }}" id="status_input">
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-success w-100">Simpan</button>
                 </form>
@@ -110,11 +165,10 @@
                                 <th width="10%">Sales</th>
                                 <th width="15%">Aktivitas</th>
                                 <th width="10%">Tanggal</th>
-                                {{-- <th width="10%">Lokasi</th> --}}
                                 <th width="8%">Lokasi (Cluster)</th>
                                 <th width="10%">Evidence</th>
                                 <th width="20%">Hasil / Kendala</th>
-                                <th width="8%">Status</th>
+                                <th width="10%">Status</th>
                                 @if(auth()->user()->role === 'admin')
                                     <th width="12%">Aksi</th>
                                 @endif
@@ -127,7 +181,6 @@
                                     <td>{{ $report->sales }}</td>
                                     <td>{{ Str::limit($report->aktivitas, 20) }}</td>
                                     <td>{{ \Carbon\Carbon::parse($report->tanggal)->format('d/m/Y') }}</td>
-                                    {{-- <td>{{ $report->lokasi }}</td> --}}
                                     <td>{{ $report->cluster }}</td>
                                     <td class="text-center">
                                         @if($report->evidence && Storage::disk('public')->exists($report->evidence))
@@ -145,9 +198,17 @@
                                         @endif
                                     </td>
                                     <td>{{ Str::limit($report->hasil_kendala ?? '-', 30) }}</td>
-                                    <td>
-                                        <span class="badge {{ $report->status == 'selesai' ? 'bg-warning' : 'bg-success' }}">
-                                            {{ ucfirst($report->status) }}
+                                    <td class="text-center">
+                                        <label class="status-toggle">
+                                            <input type="checkbox"
+                                                   data-report-id="{{ $report->id }}"
+                                                   class="status-toggle-input"
+                                                   {{ $report->status == 'selesai' ? 'checked' : '' }}
+                                                   {{ auth()->user()->role !== 'admin' ? 'disabled' : '' }}>
+                                            <span class="status-slider"></span>
+                                        </label>
+                                        <span class="status-label text-{{ $report->status == 'selesai' ? 'success' : 'warning' }}">
+                                            {{ $report->status == 'selesai' ? 'SELESAI' : 'PROSES' }}
                                         </span>
                                     </td>
 
@@ -198,10 +259,6 @@
                                                             <label>Aktivitas</label>
                                                             <input type="text" name="aktivitas" class="form-control" value="{{ $report->aktivitas }}" required>
                                                         </div>
-                                                        {{-- <div class="mb-3">
-                                                            <label>Lokasi</label>
-                                                            <input type="text" name="lokasi" class="form-control" value="{{ $report->lokasi }}" required>
-                                                        </div> --}}
 
                                                         <div class="mb-3">
                                                             <label>Cluster</label>
@@ -239,10 +296,19 @@
                                                         </div>
                                                         <div class="mb-3">
                                                             <label>Status</label>
-                                                            <select name="status" class="form-control" required>
-                                                                <option value="selesai" {{ $report->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                                                                <option value="proses" {{ $report->status == 'proses' ? 'selected' : '' }}>Proses</option>
-                                                            </select>
+                                                            <div class="d-flex align-items-center">
+                                                                <span class="me-2">Proses</span>
+                                                                <label class="status-toggle">
+                                                                    <input type="checkbox"
+                                                                           name="status_toggle_edit"
+                                                                           value="selesai"
+                                                                           {{ $report->status == 'selesai' ? 'checked' : '' }}
+                                                                           id="status_toggle_edit_{{ $report->id }}">
+                                                                    <span class="status-slider"></span>
+                                                                </label>
+                                                                <span class="ms-2">Selesai</span>
+                                                                <input type="hidden" name="status" value="{{ $report->status }}" id="status_input_edit_{{ $report->id }}">
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
@@ -256,7 +322,7 @@
                                 @endif
                             @empty
                                 <tr>
-                                    <td colspan="{{ auth()->user()->role === 'admin' ? '10' : '9' }}" class="text-center py-4">
+                                    <td colspan="{{ auth()->user()->role === 'admin' ? '9' : '8' }}" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i><br>
                                             Belum ada report activity<br>
@@ -293,7 +359,10 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Select2
     $('.select2').select2({ placeholder: 'Cari cluster…', width: '100%' });
+
+    // Handle Select2 in modals
     document.querySelectorAll('.modal').forEach(function(modalElement) {
         modalElement.addEventListener('shown.bs.modal', function () {
             var selectInModal = modalElement.querySelector('.select2');
@@ -305,6 +374,77 @@
                     dropdownParent: $(modalElement).find('.modal-content')
                 });
             }
+        });
+    });
+
+    // Handle status toggle on form tambah
+    const statusToggle = document.querySelector('input[name="status_toggle"]');
+    const statusInput = document.getElementById('status_input');
+
+    if (statusToggle && statusInput) {
+        statusToggle.addEventListener('change', function() {
+            statusInput.value = this.checked ? 'selesai' : 'proses';
+        });
+    }
+
+    // Handle status toggle on edit modals
+    document.querySelectorAll('input[name="status_toggle_edit"]').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            const reportId = this.id.replace('status_toggle_edit_', '');
+            const hiddenInput = document.getElementById('status_input_edit_' + reportId);
+            if (hiddenInput) {
+                hiddenInput.value = this.checked ? 'selesai' : 'proses';
+            }
+        });
+    });
+
+    // Handle quick status toggle in table (dengan AJAX)
+    document.querySelectorAll('.status-toggle-input').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            if (this.disabled) return;
+
+            const reportId = this.getAttribute('data-report-id');
+            const newStatus = this.checked ? 'selesai' : 'proses';
+            const statusLabel = this.closest('td').querySelector('.status-label');
+
+            // Update UI immediately
+            if (statusLabel) {
+                statusLabel.textContent = newStatus.toUpperCase();
+                statusLabel.className = 'status-label text-' + (newStatus === 'selesai' ? 'success' : 'warning');
+            }
+
+            // Send AJAX request to update status
+            fetch(`/reports/${reportId}/update-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert on error
+                    this.checked = !this.checked;
+                    if (statusLabel) {
+                        const revertStatus = this.checked ? 'selesai' : 'proses';
+                        statusLabel.textContent = revertStatus.toUpperCase();
+                        statusLabel.className = 'status-label text-' + (revertStatus === 'selesai' ? 'success' : 'warning');
+                    }
+                    alert('Gagal mengubah status');
+                }
+            })
+            .catch(error => {
+                // Revert on error
+                this.checked = !this.checked;
+                if (statusLabel) {
+                    const revertStatus = this.checked ? 'selesai' : 'proses';
+                    statusLabel.textContent = revertStatus.toUpperCase();
+                    statusLabel.className = 'status-label text-' + (revertStatus === 'selesai' ? 'success' : 'warning');
+                }
+                alert('Terjadi kesalahan');
+            });
         });
     });
   });
