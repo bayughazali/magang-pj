@@ -334,7 +334,7 @@
   <!-- Bagian Kiri: Logo -->
   <div class="logo-section">
     <div class="logo-content">
-      <img src="{{ asset('argonpro/assets/img/brand/iconnet2.png') }}" alt="PLN Icon Plus" class="iconnet-logo">
+      <img src="{{ asset('argonpro/assets/img/brand/iconnet2.png') }}" alt="PLN Icon Plus" class="pln-logo">
       <div class="powered-by">
         <br />
       </div>
