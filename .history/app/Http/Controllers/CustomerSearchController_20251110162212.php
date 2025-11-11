@@ -48,7 +48,7 @@ class CustomerSearchController extends Controller
 
     // Filter berdasarkan Cluster
     if ($request->filled('cluster')) {
-        $query->where('cluster', strtoupper($request->cluster));
+        $query->where('kecamatan', strtoupper($request->cluster));
     }
 
     // Ambil data hasil pencarian
@@ -77,7 +77,7 @@ class CustomerSearchController extends Controller
             'kabupaten'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'cluster'        => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
         ], [
@@ -89,7 +89,7 @@ class CustomerSearchController extends Controller
             'provinsi.required' => 'Provinsi wajib dipilih',
             'kabupaten.required' => 'Kabupaten wajib dipilih',
             'alamat.required' => 'Alamat wajib diisi',
-            'cluster.required' => 'Cluster wajib dipilih',
+            'kecamatan.required' => 'Kecamatan wajib dipilih',
             'latitude.between' => 'Latitude harus antara -90 sampai 90',
             'longitude.between' => 'Longitude harus antara -180 sampai 180',
         ]);
@@ -163,7 +163,7 @@ class CustomerSearchController extends Controller
             'kabupaten'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'cluster'        => 'required|string|max:100',
+            'kecamatan'        => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
         ], [
@@ -175,7 +175,7 @@ class CustomerSearchController extends Controller
             'provinsi.required' => 'Provinsi wajib dipilih',
             'kabupaten.required' => 'Kabupaten wajib dipilih',
             'alamat.required' => 'Alamat wajib diisi',
-            'cluster.required' => 'Cluster wajib dipilih',
+            'kecamatan.required' => 'Kecamatan wajib dipilih',
             'latitude.between' => 'Latitude harus antara -90 sampai 90',
             'longitude.between' => 'Longitude harus antara -180 sampai 180',
         ]);
@@ -281,8 +281,8 @@ class CustomerSearchController extends Controller
         $query = Pelanggan::query();
 
         // Apply filter seperti di index
-        if ($request->filled('cluster')) {
-            $query->where('cluster', $request->cluster);
+        if ($request->filled('kecamatan')) {
+            $query->where('kecamatan', $request->kecamatan);
         }
 
         if ($request->filled('provinsi')) {
@@ -314,7 +314,7 @@ class CustomerSearchController extends Controller
                 'Provinsi',
                 'Kabupaten',
                 'Alamat',
-                'Cluster',
+                'Kecamatan',
                 'Kode FAT',
                 'Latitude',
                 'Longitude',
@@ -331,7 +331,7 @@ class CustomerSearchController extends Controller
                     $pelanggan->provinsi,
                     $pelanggan->kabupaten,
                     $pelanggan->alamat,
-                    $pelanggan->cluster,
+                    $pelanggan->kecamatan,
                     $pelanggan->kode_fat,
                     $pelanggan->latitude,
                     $pelanggan->longitude,

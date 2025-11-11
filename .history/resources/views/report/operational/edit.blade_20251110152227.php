@@ -31,7 +31,7 @@
                 @method('PUT')
 
                 <div class="row g-3">
-                    {{-- ID PELANGGAN --}}
+                    {{-- ⭐ PERBAIKAN: Tambahkan name="id_pelanggan" agar ter-submit ⭐ --}}
                     <div class="col-md-3">
                         <label class="form-label">ID Pelanggan</label>
                         <input type="text"
@@ -64,7 +64,7 @@
                     </div>
 
                     {{-- FIELD PROVINSI --}}
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Provinsi *</label>
                         <select name="provinsi" id="provinsi" class="form-control" required>
                             <option value="">-- Pilih Provinsi --</option>
@@ -77,32 +77,35 @@
                     </div>
 
                     {{-- FIELD KABUPATEN --}}
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Kabupaten/Kota *</label>
                         <select name="kabupaten" id="kabupaten" class="form-control" required>
                             <option value="">-- Pilih Kabupaten --</option>
                         </select>
                     </div>
 
-                    {{-- FIELD KECAMATAN --}}
-                    <div class="col-md-3">
-                        <label class="form-label">Kecamatan *</label>
-                        <select name="kecamatan" id="kecamatan" class="form-control" required>
-                            <option value="">-- Pilih Kecamatan --</option>
-                        </select>
-                    </div>
-
                     {{-- FIELD FAT YANG OTOMATIS --}}
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Kode FAT</label>
                         <input type="text" id="kode_fat" name="kode_fat" class="form-control fat-code-field" placeholder="Akan terisi otomatis..." value="{{ old('kode_fat', $pelanggan->kode_fat) }}" readonly>
-                        <small class="text-muted">Kode FAT akan muncul otomatis</small>
+                        <small class="text-muted">Kode FAT akan muncul setelah memilih provinsi dan kabupaten</small>
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Alamat *</label>
                         <textarea name="alamat" rows="2" class="form-control" required>{{ old('alamat', $pelanggan->alamat) }}</textarea>
                     </div>
+
+                    {{-- <div class="col-md-3">
+                        <label class="form-label">Cluster *</label>
+                        <select name="cluster" class="form-control" required>
+                            <option value="">-- Pilih Cluster --</option>
+                            <option value="Cluster A" {{ old('cluster', $pelanggan->cluster) == 'Cluster A' ? 'selected' : '' }}>Cluster A</option>
+                            <option value="Cluster B" {{ old('cluster', $pelanggan->cluster) == 'Cluster B' ? 'selected' : '' }}>Cluster B</option>
+                            <option value="Cluster C" {{ old('cluster', $pelanggan->cluster) == 'Cluster C' ? 'selected' : '' }}>Cluster C</option>
+                            <option value="Cluster D" {{ old('cluster', $pelanggan->cluster) == 'Cluster D' ? 'selected' : '' }}>Cluster D</option>
+                        </select>
+                    </div> --}}
 
                     <div class="col-md-3">
                         <label class="form-label">Latitude *</label>
@@ -114,7 +117,7 @@
                         <input type="text" id="longitude" name="longitude" class="form-control" placeholder="115.188916" value="{{ old('longitude', $pelanggan->longitude) }}" required>
                     </div>
 
-                    {{-- BUTTON AMBIL LOKASI SAAT INI --}}
+                    {{-- ⭐ BUTTON AMBIL LOKASI SAAT INI - DITAMBAHKAN DI SINI ⭐ --}}
                     <div class="col-md-3">
                         <label class="form-label d-block">&nbsp;</label>
                         <button type="button" class="btn btn-info w-100" id="getCurrentLocation">
@@ -189,7 +192,12 @@
     }
 }
 
-.btn-success:hover, .btn-secondary:hover {
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-secondary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
@@ -197,11 +205,17 @@
 /* Styling untuk button Ambil Lokasi */
 #getCurrentLocation {
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 #getCurrentLocation:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+#getCurrentLocation:active {
+    transform: translateY(0);
 }
 
 #getCurrentLocation.loading {
@@ -214,6 +228,12 @@
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+}
+
+#locationStatus {
+    min-height: 18px;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 /* Coordinate fields highlight when updated */
@@ -243,19 +263,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     const provinsiSelect = document.getElementById('provinsi');
     const kabupatenSelect = document.getElementById('kabupaten');
-    const kecamatanSelect = document.getElementById('kecamatan');
     const kodeFatInput = document.getElementById('kode_fat');
 
     // Data untuk pre-populate
     const oldProvinsi = '{{ old("provinsi", $pelanggan->provinsi) }}';
     const oldKabupaten = '{{ old("kabupaten", $pelanggan->kabupaten) }}';
-    const oldKecamatan = '{{ old("kecamatan", $pelanggan->kecamatan) }}';
     const oldKodeFat = '{{ old("kode_fat", $pelanggan->kode_fat) }}';
 
     console.log('Edit Page - Initial values:', {
         provinsi: oldProvinsi,
         kabupaten: oldKabupaten,
-        kecamatan: oldKecamatan,
         kode_fat: oldKodeFat
     });
 
@@ -264,11 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const provinsi = this.value;
         console.log('Provinsi selected:', provinsi);
 
-        // Reset kabupaten, kecamatan, dan kode FAT
+        // Reset kabupaten dan kode FAT
         kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
         kabupatenSelect.disabled = true;
-        kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        kecamatanSelect.disabled = true;
         kodeFatInput.value = '';
 
         if (provinsi) {
@@ -300,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Restore old kabupaten value if available
                         if (oldKabupaten && provinsi === oldProvinsi) {
                             kabupatenSelect.value = oldKabupaten;
-                            // Trigger kabupaten change to load kecamatan
+                            // Trigger kabupaten change to load FAT code
                             const event = new Event('change');
                             kabupatenSelect.dispatchEvent(event);
                         }
@@ -317,72 +332,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Event handler saat kabupaten dipilih - LOAD KECAMATAN
+    // Event handler saat kabupaten dipilih - GENERATE KODE FAT
     kabupatenSelect.addEventListener('change', function() {
         const provinsi = provinsiSelect.value;
         const kabupaten = this.value;
 
         console.log('Kabupaten selected:', kabupaten, 'for provinsi:', provinsi);
 
-        // Reset kecamatan dan kode FAT
-        kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        kecamatanSelect.disabled = true;
-        kodeFatInput.value = '';
-
         if (provinsi && kabupaten) {
-            const url = `/report/operational/get-kecamatan?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
-            console.log('Fetching kecamatan URL:', url);
-
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Kecamatan response:', data);
-
-                    if (data.success && data.kecamatan && Array.isArray(data.kecamatan) && data.kecamatan.length > 0) {
-                        data.kecamatan.forEach(kec => {
-                            const option = document.createElement('option');
-                            option.value = kec;
-                            option.textContent = kec;
-                            kecamatanSelect.appendChild(option);
-                        });
-                        kecamatanSelect.disabled = false;
-                        showNotification('Kecamatan berhasil dimuat!', 'success');
-
-                        // Restore old kecamatan value if available
-                        if (oldKecamatan && kabupaten === oldKabupaten) {
-                            kecamatanSelect.value = oldKecamatan;
-                            // Trigger kecamatan change to load FAT code
-                            const event = new Event('change');
-                            kecamatanSelect.dispatchEvent(event);
-                        }
-                    } else {
-                        kecamatanSelect.innerHTML = '<option value="">Tidak ada kecamatan</option>';
-                        showNotification('Tidak ada data kecamatan untuk kabupaten ini', 'warning');
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch kecamatan error:', error);
-                    kecamatanSelect.innerHTML = '<option value="">Error loading data</option>';
-                    showNotification(`Gagal memuat data kecamatan: ${error.message}`, 'error');
-                });
-        }
-    });
-
-    // Event handler saat kecamatan dipilih - GENERATE KODE FAT
-    kecamatanSelect.addEventListener('change', function() {
-        const provinsi = provinsiSelect.value;
-        const kabupaten = kabupatenSelect.value;
-        const kecamatan = this.value;
-
-        console.log('Kecamatan selected:', kecamatan);
-
-        if (provinsi && kabupaten && kecamatan) {
-            const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}&kecamatan=${encodeURIComponent(kecamatan)}`;
+            const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
             console.log('Fetching FAT code URL:', url);
 
             fetch(url)
@@ -424,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
         provinsiSelect.dispatchEvent(event);
     }
 
-    // FUNCTIONALITY BUTTON AMBIL LOKASI SAAT INI
+    // ⭐ FUNCTIONALITY BUTTON AMBIL LOKASI SAAT INI - DITAMBAHKAN DI SINI ⭐
     const getCurrentLocationBtn = document.getElementById('getCurrentLocation');
     const locationStatus = document.getElementById('locationStatus');
     const latitudeInput = document.getElementById('latitude');

@@ -281,8 +281,8 @@ class CustomerSearchController extends Controller
         $query = Pelanggan::query();
 
         // Apply filter seperti di index
-        if ($request->filled('cluster')) {
-            $query->where('cluster', $request->cluster);
+        if ($request->filled('kecamatan')) {
+            $query->where('kecamatan', $request->cluster);
         }
 
         if ($request->filled('provinsi')) {
@@ -314,7 +314,7 @@ class CustomerSearchController extends Controller
                 'Provinsi',
                 'Kabupaten',
                 'Alamat',
-                'Cluster',
+                'Kecamatan',
                 'Kode FAT',
                 'Latitude',
                 'Longitude',
@@ -331,7 +331,7 @@ class CustomerSearchController extends Controller
                     $pelanggan->provinsi,
                     $pelanggan->kabupaten,
                     $pelanggan->alamat,
-                    $pelanggan->cluster,
+                    $pelanggan->kecamatan,
                     $pelanggan->kode_fat,
                     $pelanggan->latitude,
                     $pelanggan->longitude,

@@ -331,7 +331,7 @@ class CustomerSearchController extends Controller
                     $pelanggan->provinsi,
                     $pelanggan->kabupaten,
                     $pelanggan->alamat,
-                    $pelanggan->cluster,
+                    $pelanggan->kecamatan,
                     $pelanggan->kode_fat,
                     $pelanggan->latitude,
                     $pelanggan->longitude,

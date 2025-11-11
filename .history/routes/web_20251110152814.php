@@ -140,6 +140,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('get-kabupaten');
     Route::get('/get-kecamatan', [OperationalReportController::class, 'getKecamatan'])->name('get-kecamatan'); // ✅ Tambahkan ini
     Route::get('/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('get-kode-fat');
+
+    // Get kecamatan berdasarkan kabupaten
+Route::get('/get-kecamatan', [OperationalController::class, 'getKecamatan']);
+
+// Get kode FAT dengan 3 parameter
+Route::get('/get-kode-fat', [OperationalController::class, 'getKodeFat']);
 });
 
     // ================== CUSTOMER ROUTES ================== //

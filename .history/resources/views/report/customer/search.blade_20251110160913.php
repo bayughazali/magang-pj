@@ -154,39 +154,39 @@
                                     $startIndex = method_exists($pelanggans, 'firstItem') ? $pelanggans->firstItem() : 1;
                                 @endphp
 
-                                @foreach($pelanggans as $index => $pelanggan)
-                                <tr id="row-{{ $pelanggan->id }}">
+                                @foreach($pelanggans as $index => $pelanggans)
+                                <tr id="row-{{ $pelanggans->id }}">
                                     <td>{{ $startIndex + $index }}</td>
                                     <td>
-                                        <span class="fw-semibold text-primary">{{ $pelanggan->id_pelanggan ?? 'N/A' }}</span>
+                                        <span class="fw-semibold text-primary">{{ $pelanggans->id_pelanggan ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold">{{ $pelanggan->nama_pelanggan ?? 'N/A' }}</div>
+                                        <div class="fw-semibold">{{ $pelanggans->nama_pelanggan ?? 'N/A' }}</div>
                                         <small class="text-muted">
-                                            {{ isset($pelanggan->created_at) ? \Carbon\Carbon::parse($pelanggan->created_at)->format('d M Y') : 'N/A' }}
+                                            {{ isset($pelanggans->created_at) ? \Carbon\Carbon::parse($pelanggans->created_at)->format('d M Y') : 'N/A' }}
                                         </small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ $pelanggan->bandwidth ?? 'N/A' }}</span>
+                                        <span class="badge bg-info">{{ $pelanggans->bandwidth ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <small class="text-muted">{{ isset($pelanggan->alamat) ? Str::limit($pelanggan->alamat, 30) : 'N/A' }}</small>
+                                        <small class="text-muted">{{ isset($pelanggans->alamat) ? Str::limit($pelanggans->alamat, 30) : 'N/A' }}</small>
                                     </td>
                                     <td>
-                                        <span class="fw-semibold">{{ $pelanggan->nomor_telepon ?? 'N/A' }}</span>
+                                        <span class="fw-semibold">{{ $pelanggans->nomor_telepon ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-primary">{{ $pelanggan->provinsi ?? 'N/A' }}</span>
+                                        <span class="badge bg-primary">{{ $pelanggans->provinsi ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ $pelanggan->kabupaten ?? 'N/A' }}</span>
+                                        <span class="badge bg-secondary">{{ $pelanggans->kabupaten ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-success">{{ $pelanggan->kecamatan ?? 'N/A' }}</span>
+                                        <span class="badge bg-success">{{ $pelanggans->kecamatan ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        @if(isset($pelanggan->kode_fat) && $pelanggan->kode_fat)
-                                            <span class="badge bg-warning text-dark">{{ $pelanggan->kode_fat }}</span>
+                                        @if(isset($pelanggans->kode_fat) && $pelanggans->kode_fat)
+                                            <span class="badge bg-warning text-dark">{{ $pelanggans->kode_fat }}</span>
                                         @else
                                             <span class="badge bg-secondary">Tidak Ada</span>
                                         @endif

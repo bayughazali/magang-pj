@@ -22,9 +22,9 @@ class Pelanggan extends Model
         'nama_pelanggan',
         'bandwidth',
         'alamat',
-        'provinsi',
-        'kabupaten',
-        'kecamatan',        // ✅ Sudah pakai kecamatan, bukan cluster
+        'provinsi',        // Field baru
+        'kabupaten',       // Field baru
+        'kecamatan',
         'latitude',
         'longitude',
         'nomor_telepon',
@@ -65,12 +65,11 @@ class Pelanggan extends Model
     }
 
     /**
-     * Scope untuk filter berdasarkan kecamatan
-     * ✅ DIPERBAIKI: cluster → kecamatan
+     * Scope untuk filter berdasarkan cluster
      */
     public function scopeByKecamatan($query, $kecamatan)
     {
-        return $query->where('kecamatan', $kecamatan);
+        return $query->where('cluster', $cluster);
     }
 
     /**
@@ -96,13 +95,11 @@ class Pelanggan extends Model
 
     /**
      * Accessor untuk format alamat lengkap
-     * ✅ DITAMBAHKAN: kecamatan dalam alamat lengkap
      */
     public function getAlamatLengkapAttribute()
     {
         $parts = array_filter([
             $this->alamat,
-            $this->kecamatan,
             $this->kabupaten,
             $this->provinsi
         ]);
@@ -148,21 +145,6 @@ class Pelanggan extends Model
         return "{$this->id_pelanggan} - {$this->nama_pelanggan}";
     }
 
-    /**
-     * Accessor untuk lokasi wilayah (Provinsi → Kabupaten → Kecamatan)
-     * ✅ BARU: Menampilkan hierarki wilayah lengkap
-     */
-    public function getWilayahLengkapAttribute()
-    {
-        $parts = array_filter([
-            $this->provinsi,
-            $this->kabupaten,
-            $this->kecamatan
-        ]);
-
-        return implode(' → ', $parts);
-    }
-
     // ========================================
     // 🔹 STATIC METHODS untuk DASHBOARD
     // ========================================
@@ -198,7 +180,7 @@ class Pelanggan extends Model
     /**
      * Hitung total pelanggan per kabupaten dalam provinsi tertentu
      *
-     * @param string|null $provinsi
+     * @param string $provinsi
      * @return \Illuminate\Support\Collection
      */
     public static function totalPerKabupaten($provinsi = null)
@@ -217,25 +199,18 @@ class Pelanggan extends Model
     }
 
     /**
-     * Hitung total pelanggan per kecamatan
-     * ✅ DIPERBAIKI: totalPerCluster → totalPerKecamatan
+     * Hitung total pelanggan per cluster
      *
-     * @param string|null $kabupaten
      * @return \Illuminate\Support\Collection
      */
-    public static function totalPerKecamatan($kabupaten = null)
+    public static function totalPerCluster()
     {
-        $query = self::select('kecamatan', DB::raw('COUNT(*) as total'))
-            ->whereNotNull('kecamatan')
-            ->where('kecamatan', '!=', '');
-
-        if ($kabupaten) {
-            $query->where('kabupaten', $kabupaten);
-        }
-
-        return $query->groupBy('kecamatan')
-                    ->orderByDesc('total')
-                    ->get();
+        return self::select('cluster', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('cluster')
+            ->where('cluster', '!=', '')
+            ->groupBy('cluster')
+            ->orderBy('cluster')
+            ->get();
     }
 
     /**
@@ -311,7 +286,6 @@ class Pelanggan extends Model
 
     /**
      * Get statistik total pelanggan
-     * ✅ DIPERBAIKI: per_cluster → per_kecamatan
      *
      * @return array
      */
@@ -325,8 +299,7 @@ class Pelanggan extends Model
             'tahun_ini' => self::whereYear('created_at', date('Y'))
                               ->count(),
             'per_provinsi' => self::totalPerProvinsi(),
-            'per_kabupaten' => self::totalPerKabupaten(),
-            'per_kecamatan' => self::totalPerKecamatan(),
+            'per_cluster' => self::totalPerCluster(),
             'per_bandwidth' => self::totalPerBandwidth(),
         ];
     }
@@ -395,54 +368,6 @@ class Pelanggan extends Model
             ->having('jarak', '<', $radius)
             ->orderBy('jarak', 'asc')
             ->get();
-    }
-
-    /**
-     * Get statistik wilayah (Provinsi → Kabupaten → Kecamatan)
-     * ✅ BARU: Method untuk analisis hierarki wilayah
-     *
-     * @param string|null $provinsi
-     * @param string|null $kabupaten
-     * @return array
-     */
-    public static function statistikWilayah($provinsi = null, $kabupaten = null)
-    {
-        $query = self::query();
-
-        if ($provinsi) {
-            $query->where('provinsi', $provinsi);
-        }
-
-        if ($kabupaten) {
-            $query->where('kabupaten', $kabupaten);
-        }
-
-        return [
-            'total' => $query->count(),
-            'per_provinsi' => self::totalPerProvinsi(),
-            'per_kabupaten' => self::totalPerKabupaten($provinsi),
-            'per_kecamatan' => self::totalPerKecamatan($kabupaten),
-        ];
-    }
-
-    /**
-     * Get list kecamatan berdasarkan provinsi dan kabupaten
-     * ✅ BARU: Method untuk dropdown cascade
-     *
-     * @param string $provinsi
-     * @param string $kabupaten
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getKecamatanList($provinsi, $kabupaten)
-    {
-        return self::select('kecamatan')
-            ->where('provinsi', $provinsi)
-            ->where('kabupaten', $kabupaten)
-            ->whereNotNull('kecamatan')
-            ->where('kecamatan', '!=', '')
-            ->distinct()
-            ->orderBy('kecamatan')
-            ->pluck('kecamatan');
     }
 
     // ========================================

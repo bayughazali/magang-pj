@@ -185,8 +185,8 @@
                                         <span class="badge bg-success">{{ $pelanggan->kecamatan ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        @if(isset($pelanggan->kode_fat) && $pelanggan->kode_fat)
-                                            <span class="badge bg-warning text-dark">{{ $pelanggan->kode_fat }}</span>
+                                        @if(isset($pelanggans->kode_fat) && $pelanggans->kode_fat)
+                                            <span class="badge bg-warning text-dark">{{ $pelanggans->kode_fat }}</span>
                                         @else
                                             <span class="badge bg-secondary">Tidak Ada</span>
                                         @endif

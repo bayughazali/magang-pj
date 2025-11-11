@@ -17,51 +17,42 @@ class CustomerSearchController extends Controller
     /**
      * Tampilkan halaman operational report
      */
-   public function index(Request $request)
-{
-    // 🔹 1. Buat query awal
-    $query = \App\Models\Pelanggan::query();
+    public function index(Request $request)
+    {
+        // 🔹 1. Buat query awal
+        $query = \App\Models\Pelanggan::query();
 
-    // 🔹 2. Jika ada input pencarian (tetap difilter)
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->where(function ($q) use ($search) {
-            $q->where('id_pelanggan', 'like', "%{$search}%")
-              ->orWhere('nama_pelanggan', 'like', "%{$search}%")
-              ->orWhere('nomor_telepon', 'like', "%{$search}%")
-              ->orWhere('kode_fat', 'like', "%{$search}%");
-        });
+        // 🔹 2. Jika ada input pencarian (tetap difilter)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id_pelanggan', 'like', "%{$search}%")
+                    ->orWhere('nama_pelanggan', 'like', "%{$search}%")
+                    ->orWhere('nomor_telepon', 'like', "%{$search}%")
+                    ->orWhere('kode_fat', 'like', "%{$search}%");
+            });
+        }
+
+        // 🔹 Filter berdasarkan Provinsi
+        if ($request->filled('provinsi')) {
+            $query->where('provinsi', strtoupper($request->provinsi));
+        }
+
+        // 🔹 Filter berdasarkan Kecamatan
+        if ($request->filled('kecamatan')) {
+            $query->where('kecamatan', strtoupper($request->kecamatan));
+        }
+
+        // 🔹 Ambil data hasil pencarian
+        $pelanggans = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // 🔹 Data dropdown
+        $provinsiList = ['BALI', 'NUSA TENGGARA BARAT', 'NUSA TENGGARA TIMUR'];
+        $kecamatans = ['KECAMATAN A', 'KECAMATAN B', 'KECAMATAN C', 'KECAMATAN D'];
+
+        // kirim ke view
+        return view('report.customer.search', compact('pelanggans', 'provinsiList', 'kecamatans'));
     }
-
-    // 🔹 3. Jika tidak ada pencarian sama sekali, tampilkan semua data pelanggan
-    //     Inilah bagian penting agar tabel muncul otomatis
-    $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
-
-    // 🔹 4. Data tambahan dropdown (optional)
-    $clusters = \App\Models\Pelanggan::select('cluster')->distinct()->pluck('cluster');
-    $provinsiList = \App\Models\Pelanggan::select('provinsi')->distinct()->pluck('provinsi');
-
-// Filter berdasarkan Provinsi
-    if ($request->filled('provinsi')) {
-        $query->where('provinsi', strtoupper($request->provinsi));
-    }
-
-    // Filter berdasarkan Cluster
-    if ($request->filled('cluster')) {
-        $query->where('cluster', strtoupper($request->cluster));
-    }
-
-    // Ambil data hasil pencarian
-    $pelanggans = $query->paginate(10);
-
-    // Data dropdown
-    $provinsiList = ['BALI', 'NUSA TENGGARA BARAT', 'NUSA TENGGARA TIMUR'];
-    $clusters = ['CLUSTER A', 'CLUSTER B', 'CLUSTER C', 'CLUSTER D'];
-
-
-    // kirim ke view
-    return view('report.customer.search', compact('pelanggans', 'provinsiList', 'clusters'));
-}
 
     /**
      * Simpan data pelanggan baru
@@ -77,7 +68,7 @@ class CustomerSearchController extends Controller
             'kabupaten'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'cluster'        => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
         ], [
@@ -89,7 +80,7 @@ class CustomerSearchController extends Controller
             'provinsi.required' => 'Provinsi wajib dipilih',
             'kabupaten.required' => 'Kabupaten wajib dipilih',
             'alamat.required' => 'Alamat wajib diisi',
-            'cluster.required' => 'Cluster wajib dipilih',
+            'kecamatan.required' => 'Kecamatan wajib dipilih',
             'latitude.between' => 'Latitude harus antara -90 sampai 90',
             'longitude.between' => 'Longitude harus antara -180 sampai 180',
         ]);
@@ -116,13 +107,11 @@ class CustomerSearchController extends Controller
     /**
      * Tampilkan form edit pelanggan
      */
-     public function edit($id)
+    public function edit($id)
     {
-         try {
-            // Cari berdasarkan id_pelanggan
+        try {
             $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
 
-            // Data region untuk dropdown
             $regionData = $this->getRegionData();
 
             Log::info("Form edit dibuka untuk pelanggan: {$pelanggan->nama_pelanggan} (ID: {$id})");
@@ -143,17 +132,14 @@ class CustomerSearchController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Log untuk debugging
         Log::info("Attempting to update pelanggan with ID: {$id}");
         Log::info("Request data: " . json_encode($request->all()));
 
-        // Validasi input
         $validated = $request->validate([
             'id_pelanggan'   => [
                 'required',
                 'string',
                 'max:100',
-                // Unique validation yang benar untuk primary key non-increment
                 \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
             ],
             'nama_pelanggan' => 'required|string|max:255',
@@ -163,30 +149,15 @@ class CustomerSearchController extends Controller
             'kabupaten'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'cluster'        => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
-        ], [
-            'id_pelanggan.required' => 'ID Pelanggan wajib diisi',
-            'id_pelanggan.unique' => 'ID Pelanggan sudah digunakan oleh pelanggan lain',
-            'nama_pelanggan.required' => 'Nama Pelanggan wajib diisi',
-            'bandwidth.required' => 'Bandwidth wajib diisi',
-            'nomor_telepon.required' => 'Nomor Telepon wajib diisi',
-            'provinsi.required' => 'Provinsi wajib dipilih',
-            'kabupaten.required' => 'Kabupaten wajib dipilih',
-            'alamat.required' => 'Alamat wajib diisi',
-            'cluster.required' => 'Cluster wajib dipilih',
-            'latitude.between' => 'Latitude harus antara -90 sampai 90',
-            'longitude.between' => 'Longitude harus antara -180 sampai 180',
         ]);
 
         try {
-            // Cari pelanggan berdasarkan id_pelanggan
             $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
 
-            // Jika ID pelanggan diubah, perlu update primary key
             if ($validated['id_pelanggan'] !== $id) {
-                // Cek apakah ID baru sudah ada
                 $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
                 if ($exists) {
                     return redirect()
@@ -195,7 +166,6 @@ class CustomerSearchController extends Controller
                         ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
                 }
 
-                // Hapus data lama dan buat baru dengan ID baru
                 DB::transaction(function () use ($pelanggan, $validated) {
                     $oldId = $pelanggan->id_pelanggan;
                     $pelanggan->delete();
@@ -203,7 +173,6 @@ class CustomerSearchController extends Controller
                     Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
                 });
             } else {
-                // Update biasa jika ID tidak berubah
                 $pelanggan->update($validated);
             }
 
@@ -213,17 +182,8 @@ class CustomerSearchController extends Controller
                 ->route('report.operational.index')
                 ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error("Pelanggan tidak ditemukan dengan ID: {$id}");
-
-            return redirect()
-                ->route('report.operational.index')
-                ->withErrors(['error' => 'Data pelanggan tidak ditemukan']);
-
         } catch (\Exception $e) {
             Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
-
             return redirect()
                 ->back()
                 ->withInput()
@@ -280,9 +240,8 @@ class CustomerSearchController extends Controller
     {
         $query = Pelanggan::query();
 
-        // Apply filter seperti di index
-        if ($request->filled('cluster')) {
-            $query->where('cluster', $request->cluster);
+        if ($request->filled('kecamatan')) {
+            $query->where('kecamatan', $request->kecamatan);
         }
 
         if ($request->filled('provinsi')) {
@@ -295,17 +254,15 @@ class CustomerSearchController extends Controller
 
         $pelanggans = $query->orderBy('created_at', 'desc')->get();
 
-        // Generate CSV
         $filename = 'operational_report_' . date('Y-m-d_His') . '.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function() use ($pelanggans) {
+        $callback = function () use ($pelanggans) {
             $file = fopen('php://output', 'w');
 
-            // Header CSV
             fputcsv($file, [
                 'ID Pelanggan',
                 'Nama Pelanggan',
@@ -314,14 +271,13 @@ class CustomerSearchController extends Controller
                 'Provinsi',
                 'Kabupaten',
                 'Alamat',
-                'Cluster',
+                'Kecamatan',
                 'Kode FAT',
                 'Latitude',
                 'Longitude',
                 'Tanggal Dibuat'
             ]);
 
-            // Data rows
             foreach ($pelanggans as $pelanggan) {
                 fputcsv($file, [
                     $pelanggan->id_pelanggan,
@@ -331,7 +287,7 @@ class CustomerSearchController extends Controller
                     $pelanggan->provinsi,
                     $pelanggan->kabupaten,
                     $pelanggan->alamat,
-                    $pelanggan->cluster,
+                    $pelanggan->kecamatan,
                     $pelanggan->kode_fat,
                     $pelanggan->latitude,
                     $pelanggan->longitude,

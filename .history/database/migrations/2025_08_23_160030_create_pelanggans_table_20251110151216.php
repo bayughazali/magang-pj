@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('kabupaten', 100)->nullable();
             $table->string('kecamatan', 100)->nullable();
             $table->text('alamat');
+            $table->string('cluster', 20);
             $table->string('kode_fat', 50)->nullable();
             $table->decimal('latitude', 10, 6)->default(-8.409518);
             $table->decimal('longitude', 10, 6)->default(115.188916);
