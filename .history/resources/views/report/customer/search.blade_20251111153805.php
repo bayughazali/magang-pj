@@ -3,16 +3,19 @@
 @section('content')
 <div class="container-fluid mt-4">
 
-        <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-primary text-white rounded-top">
-            <div>
-                <h4 class="fw-bold mb-1">
-                    <i class="fas fa-users me-2"></i> Cari Pelanggan & Kode FAT
-                </h4>
-                <p class="mb-0">Pencarian data pelanggan berdasarkan berbagai kriteria</p>
-            </div>
+    <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-primary text-white rounded-top">
+        <div>
+            <h4 class="fw-bold mb-1">
+                <i class="fas fa-users me-2"></i> Cari Pelanggan & Kode FAT
+            </h4>
+            <p class="mb-0">Pencarian data pelanggan berdasarkan berbagai kriteria</p>
         </div>
     </div>
+</div>
+
+
+
     <!-- Alert Messages -->
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -103,12 +106,12 @@
 
             <!-- Reset Button -->
             <div class="row mt-3">
-            <div class="col-12">
-                <a href="{{ route('customer.search') }}" class="btn btn-primary btn-sm shadow-sm">
-                    <i class="fas fa-redo me-1"></i> Reset Filter
-                </a>
+                <div class="col-12">
+                    <a href="{{ route('customer.search') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-redo me-1"></i> Reset Filter
+                    </a>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 

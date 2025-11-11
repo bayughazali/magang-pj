@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Dashboard routes
+
     Route::get('/dashboard/sales-details', [DashboardController::class, 'getSalesDetails'])->name('dashboard.sales.details');
 
     // Role-based dashboard

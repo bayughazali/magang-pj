@@ -527,7 +527,7 @@ function showSalesDetail(salesName) {
 
             // ✅ Tampilkan statistik aktivitas
             if (data.activities && data.activities.length > 0) {
-                const reportCount = data.activities.filter(a => a.type === 'Report Activity').length;
+                const activityCount = data.activities.filter(a => a.type === 'Report Activity').length;
                 const competitorCount = data.activities.filter(a => a.type === 'Report Competitor').length;
                 const operationalCount = data.activities.filter(a => a.type === 'Report Operational').length;
 

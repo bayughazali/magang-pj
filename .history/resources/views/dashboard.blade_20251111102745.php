@@ -95,61 +95,6 @@
     .progress-bar {
         transition: width 1s ease;
     }
-
-    /* ✅ Timeline Styling */
-    .timeline {
-        position: relative;
-        max-height: 600px;
-        overflow-y: auto;
-        padding-right: 10px;
-    }
-
-    .timeline::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .timeline::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .timeline::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 10px;
-    }
-
-    .timeline::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-
-    .timeline-item {
-        position: relative;
-        animation: slideInLeft 0.5s ease-out;
-    }
-
-    @keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    .timeline-badge {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    .card {
-        transition: all 0.3s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    }
 </style>
 
 <div class="header-bg">
@@ -289,7 +234,7 @@
 <div class="container-fluid mt-n5">
     <div class="row">
         {{-- ✅ AKTIVITAS SALES REPORT PER USER --}}
-        <div class="col-xl-12 mb-4">
+        <div class="col-xl-7 mb-4">
             <div class="card chart-card">
                 <div class="chart-title">
                     <i class="fas fa-user-tie text-primary me-2"></i>
@@ -307,7 +252,7 @@
                 @else
                     <div class="row g-3 mt-2">
                         @foreach($salesActivities as $sales)
-                            <div class="col-md-6 col-lg-4">
+                            <div class="col-md-6">
                                 <div class="card border shadow-sm hover-card"
                                      style="cursor: pointer; transition: all 0.3s;"
                                      onclick="showSalesDetail('{{ $sales['name'] }}')">
@@ -359,12 +304,36 @@
                 @endif
             </div>
         </div>
+
+        BAR CHART - Pelanggan per Provinsi
+        <div class="col-xl-5 mb-4">
+            <div class="card chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-map-marked-alt text-info me-2"></i> Pelanggan per Provinsi Bulan Ini
+                </div>
+                <div class="chart-subtitle">Distribusi pelanggan baru berdasarkan provinsi</div>
+                <div class="chart-container"><canvas id="chart-bar"></canvas></div>
+            </div>
+        </div>
+
+        {{-- LINE CHART - Tren Pertumbuhan Pelanggan --}}
+        <div class="col-12">
+            <div class="card chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line text-primary me-2"></i> Tren Pertumbuhan Pelanggan
+                </div>
+                <div class="chart-subtitle">
+                    Grafik menunjukkan total akumulasi pelanggan dalam 12 bulan terakhir
+                </div>
+                <div class="chart-container"><canvas id="chart-line"></canvas></div>
+            </div>
+        </div>
     </div>
 </div>
 
 {{-- ✅ MODAL DETAIL AKTIVITAS SALES --}}
 <div class="modal fade" id="salesDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(90deg, #4c6ef5, #6a92ff);">
                 <h5 class="modal-title text-white">
@@ -525,116 +494,52 @@ function showSalesDetail(salesName) {
                 `;
             }
 
-            // ✅ Tampilkan statistik aktivitas
+            // ✅ Tampilkan list aktivitas
             if (data.activities && data.activities.length > 0) {
-                const reportCount = data.activities.filter(a => a.type === 'Report Activity').length;
-                const competitorCount = data.activities.filter(a => a.type === 'Report Competitor').length;
-                const operationalCount = data.activities.filter(a => a.type === 'Report Operational').length;
-
-                html += `
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-clipboard-list fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${reportCount}</h4>
-                                    <small>Report Activity</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-danger text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-users fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${competitorCount}</h4>
-                                    <small>Report Competitor</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-success text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-user-plus fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${operationalCount}</h4>
-                                    <small>Report Operational</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // ✅ Tampilkan timeline aktivitas dengan style yang berbeda per tipe
-                html += '<div class="timeline">';
+                html += '<div class="list-group">';
 
                 data.activities.forEach((activity, index) => {
-                    let badgeClass = 'bg-primary';
-                    let iconClass = 'fa-clipboard-list';
-
-                    if (activity.type === 'Report Competitor') {
-                        badgeClass = 'bg-danger';
-                        iconClass = 'fa-users';
-                    } else if (activity.type === 'Report Operational') {
-                        badgeClass = 'bg-success';
-                        iconClass = 'fa-user-plus';
-                    }
-
                     const statusBadge = activity.status === 'selesai'
                         ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Selesai</span>'
                         : '<span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Proses</span>';
 
                     html += `
-                        <div class="timeline-item mb-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="timeline-badge ${badgeClass} rounded-circle d-flex align-items-center justify-content-center me-3"
-                                                 style="width: 40px; height: 40px;">
-                                                <i class="fas ${iconClass} text-white"></i>
-                                            </div>
-                                            <div>
-                                                <span class="badge ${badgeClass} mb-1">${activity.type}</span>
-                                                <h6 class="mb-0">
-                                                    <i class="fas fa-calendar-day text-primary me-2"></i>
-                                                    ${activity.date}
-                                                    <small class="text-muted">(${activity.day})</small>
-                                                </h6>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            ${statusBadge}
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <strong><i class="fas fa-tasks text-info me-2"></i>Aktivitas:</strong>
-                                        <p class="mb-0 ms-4">${activity.activity}</p>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <strong><i class="fas fa-map-marker-alt text-danger me-2"></i>Lokasi:</strong>
-                                        <span class="badge bg-secondary ms-2">${activity.location}</span>
-                                    </div>
-
-                                    ${activity.hasil_kendala && activity.hasil_kendala !== '-' ? `
-                                        <div class="mb-2">
-                                            <strong><i class="fas fa-clipboard-check text-success me-2"></i>Hasil/Kendala:</strong>
-                                            <p class="mb-0 ms-4 text-muted">${activity.hasil_kendala}</p>
-                                        </div>
-                                    ` : ''}
-
-                                    ${activity.evidence ? `
-                                        <div class="mt-2">
-                                            <strong class="d-block mb-2"><i class="fas fa-image text-warning me-2"></i>Evidence:</strong>
-                                            <img src="${activity.evidence}"
-                                                 alt="Evidence"
-                                                 class="img-thumbnail"
-                                                 style="max-width: 200px; cursor: pointer;"
-                                                 onclick="window.open('${activity.evidence}', '_blank')">
-                                        </div>
-                                    ` : ''}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">
+                                        <i class="fas fa-calendar-day text-primary me-2"></i>
+                                        ${activity.date}
+                                        <small class="text-muted">(${activity.day})</small>
+                                    </h6>
+                                </div>
+                                <div>
+                                    ${statusBadge}
                                 </div>
                             </div>
+                            <div class="mb-2">
+                                <strong><i class="fas fa-tasks text-info me-2"></i>Aktivitas:</strong>
+                                <p class="mb-0 ms-4">${activity.activity}</p>
+                            </div>
+                            <div class="mb-2">
+                                <strong><i class="fas fa-map-marker-alt text-danger me-2"></i>Lokasi:</strong>
+                                <span class="badge bg-secondary">${activity.location}</span>
+                            </div>
+                            ${activity.hasil_kendala && activity.hasil_kendala !== '-' ? `
+                                <div class="mb-2">
+                                    <strong><i class="fas fa-clipboard-check text-success me-2"></i>Hasil/Kendala:</strong>
+                                    <p class="mb-0 ms-4 text-muted">${activity.hasil_kendala}</p>
+                                </div>
+                            ` : ''}
+                            ${activity.evidence ? `
+                                <div class="mt-2">
+                                    <img src="${activity.evidence}"
+                                         alt="Evidence"
+                                         class="img-thumbnail"
+                                         style="max-width: 200px; cursor: pointer;"
+                                         onclick="window.open('${activity.evidence}', '_blank')">
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -704,7 +609,7 @@ document.addEventListener("DOMContentLoaded", function() {
 function toggleDropdown(dropdownId, event) {
     if (event) event.stopPropagation();
 
-    console.log('Toggle dropdown:', dropdownId);
+    console.log('Toggle dropdown:', dropdownId); // Debug log
 
     // Tutup semua dropdown kecuali yang diklik
     document.querySelectorAll('.card-dropdown').forEach(d => {
@@ -717,12 +622,12 @@ function toggleDropdown(dropdownId, event) {
     // Toggle dropdown yang diklik
     const dropdown = document.getElementById(dropdownId);
     if (dropdown) {
-        console.log('Dropdown found:', dropdownId);
+        console.log('Dropdown found:', dropdownId); // Debug log
         dropdown.classList.toggle('show');
         dropdown.parentElement.style.zIndex = dropdown.classList.contains('show') ? '9999' : '';
-        console.log('Dropdown has show class:', dropdown.classList.contains('show'));
+        console.log('Dropdown has show class:', dropdown.classList.contains('show')); // Debug log
     } else {
-        console.error('Dropdown not found:', dropdownId);
+        console.error('Dropdown not found:', dropdownId); // Debug log
     }
 }
 

@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\Pelanggan;
 use App\Models\User;
 use App\Models\ReportActivity;
-use App\Models\Competitor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +16,8 @@ class DashboardController extends Controller
     private function calculatePercentageChange($current, $previous)
     {
         if ($previous === 0) {
+            // Jika bulan lalu 0 dan bulan ini > 0, kita anggap pertumbuhan 100% dari baseline nol.
+            // Jika keduanya 0, kembalikan 0.
             return $current > 0 ? 100 : 0;
         }
         return (($current - $previous) / $previous) * 100;
@@ -39,6 +40,7 @@ class DashboardController extends Controller
             ->whereMonth('created_at', $bulanLalu->month)
             ->count();
 
+        // Menggunakan helper function
         $persenSales = $this->calculatePercentageChange($totalReportBulanIni, $totalReportBulanLalu);
 
         // ========================================
@@ -52,6 +54,7 @@ class DashboardController extends Controller
             ->whereMonth('created_at', $bulanLalu->month)
             ->count();
 
+        // Menggunakan helper function
         $persenPelanggan = $this->calculatePercentageChange($totalPelangganBulanIni, $totalPelangganBulanLalu);
 
         // ========================================
@@ -67,19 +70,23 @@ class DashboardController extends Controller
             ->whereMonth('created_at', $bulanLalu->month)
             ->count();
 
+        // Menggunakan helper function
         $persenUsers = $this->calculatePercentageChange($totalUsersBulanIni, $totalUsersBulanLalu);
 
         // ========================================
         // 🔹 GRAFIK LINE: Tren Pelanggan 12 Bulan
+        // (Asumsi method ini ada di model Pelanggan)
         // ========================================
         $trenData = Pelanggan::trenBulanan12Bulan();
 
+        // Inisialisasi array kosong
         $bulanLabels = [];
         $pelangganTren = [];
 
+        // Loop dan extract data dengan aman
         foreach ($trenData as $data) {
             $bulanLabels[] = $data['label'];
-            $pelangganTren[] = (int) $data['jumlah'];
+            $pelangganTren[] = (int) $data['jumlah']; // Cast ke integer untuk memastikan
         }
 
         // ========================================
@@ -95,6 +102,7 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
+        // Jika tidak ada data bulan ini, ambil data keseluruhan
         if ($clusterData->isEmpty()) {
             $clusterData = Pelanggan::select('provinsi', DB::raw('COUNT(*) as total'))
                 ->whereNotNull('provinsi')
@@ -105,9 +113,10 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // Extract labels dan values
         $clusterLabels = $clusterData->pluck('provinsi')->toArray();
         $clusterValues = $clusterData->pluck('total')->map(function($val) {
-            return (int) $val;
+            return (int) $val; // Cast ke integer
         })->toArray();
 
         // ========================================
@@ -116,7 +125,7 @@ class DashboardController extends Controller
         $salesActivities = $this->getSalesActivitiesPerUser($currentYear, $currentMonth);
 
         // ========================================
-        // 🔹 DEBUG LOG
+        // 🔹 DEBUG LOG (opsional, bisa dihapus nanti)
         // ========================================
         Log::info('Dashboard Chart Data', [
             'bulan_labels_count' => count($bulanLabels),
@@ -144,29 +153,38 @@ class DashboardController extends Controller
 
     /**
      * ✅ Get sales activities grouped by user for current month
+     * Mengkoneksikan dengan data User yang role = 'user'
      */
     private function getSalesActivitiesPerUser($year, $month)
     {
+        // ... (Logika ini akan dibahas dalam saran perbaikan)
         $users = User::where('role', 'user')
             ->orderBy('name')
             ->get();
 
+        // Format data untuk tampilan dengan warna dan progress
         $salesData = [];
         $colors = ['primary', 'danger', 'warning', 'info', 'success', 'secondary', 'dark'];
 
         foreach ($users as $index => $user) {
-            // Hitung jumlah aktivitas user ini bulan ini
+            // ✅ Hitung jumlah aktivitas user ini bulan ini
+            // Cocokkan berdasarkan nama user dengan field 'sales' di report_activities
             $totalActivities = ReportActivity::whereMonth('tanggal', $month)
                 ->whereYear('tanggal', $year)
                 ->where(function($query) use ($user) {
+                    // Cari berdasarkan nama lengkap atau sebagian nama
                     $query->where('sales', 'LIKE', '%' . $user->name . '%')
                           ->orWhere('sales', $user->name);
                 })
                 ->count();
 
+            // Ambil initial dari nama (huruf pertama)
             $initial = strtoupper(substr(trim($user->name), 0, 1));
+
+            // Hitung progress bar (max 10 aktivitas = 100%)
             $progress = min(($totalActivities / 10) * 100, 100);
 
+            // ✅ Tambahkan foto user jika ada
             $photoUrl = $user->photo
                 ? asset('storage/photo/' . $user->photo)
                 : null;
@@ -178,17 +196,19 @@ class DashboardController extends Controller
                 'total' => $totalActivities,
                 'color' => $colors[$index % count($colors)],
                 'progress' => round($progress, 0),
-                'photo' => $photoUrl,
+                'photo' => $photoUrl, // ✅ Foto profil user
                 'user_id' => $user->id
             ];
         }
+
+        // Filter hanya user yang punya aktivitas, atau tampilkan semua
+        // $salesData = array_filter($salesData, fn($item) => $item['total'] > 0);
 
         return collect($salesData);
     }
 
     /**
-     * ✅ Get detailed activities for a specific sales person
-     * Menggabungkan data dari Report Activity, Competitor, dan Operational
+     * ✅ Get detailed activities for a specific sales person (untuk modal)
      */
     public function getSalesDetails(Request $request)
     {
@@ -204,96 +224,34 @@ class DashboardController extends Controller
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
-        // ✅ 1. Ambil data dari Report Activity
-        $reportActivities = ReportActivity::where('sales', $salesName)
+        // Ambil semua aktivitas sales yang dipilih bulan ini
+        $activities = ReportActivity::where('sales', $salesName)
             ->whereMonth('tanggal', $currentMonth)
             ->whereYear('tanggal', $currentYear)
-            ->orderBy('tanggal', 'desc')
+            ->orderBy('tanggal', 'asc')
             ->get()
             ->map(function($activity) {
+                // Pastikan key tanggal valid sebelum parsing
+                $date = isset($activity->tanggal) ? Carbon::parse($activity->tanggal)->format('d F Y') : '-';
+
                 return [
-                    'type' => 'Report Activity',
-                    'date' => Carbon::parse($activity->tanggal)->format('d F Y'),
-                    'day' => Carbon::parse($activity->tanggal)->locale('id')->isoFormat('dddd'),
+                    'date' => $date,
                     'activity' => $activity->aktivitas ?? '-',
                     'location' => $activity->cluster ?? '-',
                     'status' => $activity->status ?? 'proses',
-                    'hasil_kendala' => $activity->hasil_kendala ?? '-',
-                    'evidence' => $activity->evidence ? asset('storage/' . $activity->evidence) : null,
-                    'created_at' => $activity->created_at,
+                    'hasil_kendala' => $activity->hasil_kendala ?? '-'
                 ];
             });
-
-        // ✅ 2. Ambil data Competitor yang dibuat user ini bulan ini
-        $competitorActivities = Competitor::whereMonth('created_at', $currentMonth)
-            ->whereYear('created_at', $currentYear)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($comp) {
-                return [
-                    'type' => 'Report Competitor',
-                    'date' => Carbon::parse($comp->created_at)->format('d F Y'),
-                    'day' => Carbon::parse($comp->created_at)->locale('id')->isoFormat('dddd'),
-                    'activity' => "Input data competitor: {$comp->competitor_name}",
-                    'location' => $comp->cluster ?? '-',
-                    'status' => 'selesai',
-                    'hasil_kendala' => "Paket: {$comp->paket}, Harga: Rp " . number_format($comp->harga, 0, ',', '.'),
-                    'evidence' => null,
-                    'created_at' => $comp->created_at,
-                ];
-            });
-
-        // ✅ 3. Ambil data Pelanggan (Operational) yang dibuat bulan ini
-        $operationalActivities = Pelanggan::whereMonth('created_at', $currentMonth)
-            ->whereYear('created_at', $currentYear)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($pelanggan) {
-                return [
-                    'type' => 'Report Operational',
-                    'date' => Carbon::parse($pelanggan->created_at)->format('d F Y'),
-                    'day' => Carbon::parse($pelanggan->created_at)->locale('id')->isoFormat('dddd'),
-                    'activity' => "Input pelanggan baru: {$pelanggan->nama_pelanggan}",
-                    'location' => "{$pelanggan->kecamatan}, {$pelanggan->kabupaten}",
-                    'status' => 'selesai',
-                    'hasil_kendala' => "Kode FAT: {$pelanggan->kode_fat}, Bandwidth: {$pelanggan->bandwidth}",
-                    'evidence' => null,
-                    'created_at' => $pelanggan->created_at,
-                ];
-            });
-
-        // ✅ 4. Gabungkan semua aktivitas dan urutkan berdasarkan tanggal terbaru
-        $allActivities = $reportActivities
-            ->concat($competitorActivities)
-            ->concat($operationalActivities)
-            ->sortByDesc('created_at')
-            ->values();
-
-        // ✅ 5. Ambil data user
-        $user = User::where('name', $salesName)->first();
-        $userData = null;
-
-        if ($user) {
-            $userData = [
-                'name' => $user->name,
-                'email' => $user->email,
-                'photo' => $user->photo ? asset('storage/photo/' . $user->photo) : null
-            ];
-        }
 
         Log::info('Sales Details Request', [
             'sales' => $salesName,
-            'report_activities' => $reportActivities->count(),
-            'competitor_activities' => $competitorActivities->count(),
-            'operational_activities' => $operationalActivities->count(),
-            'total_activities' => $allActivities->count()
+            'activities_count' => $activities->count()  
         ]);
 
         return response()->json([
             'success' => true,
             'sales' => $salesName,
-            'user' => $userData,
-            'activities' => $allActivities
+            'activities' => $activities
         ]);
     }
 }

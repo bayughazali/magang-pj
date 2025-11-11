@@ -22,6 +22,9 @@ class DashboardController extends Controller
         return (($current - $previous) / $previous) * 100;
     }
 
+    /**
+     * Halaman dashboard utama
+     */
     public function index()
     {
         $currentMonth = Carbon::now()->month;
@@ -71,8 +74,16 @@ class DashboardController extends Controller
 
         // ========================================
         // 🔹 GRAFIK LINE: Tren Pelanggan 12 Bulan
+        // (Pastikan model Pelanggan::trenBulanan12Bulan() ada)
         // ========================================
-        $trenData = Pelanggan::trenBulanan12Bulan();
+        $trenData = [];
+        try {
+            $trenData = Pelanggan::trenBulanan12Bulan();
+        } catch (\Throwable $e) {
+            Log::warning('trenBulanan12Bulan() tidak tersedia atau error: ' . $e->getMessage());
+            // fallback kosong
+            $trenData = [];
+        }
 
         $bulanLabels = [];
         $pelangganTren = [];
@@ -155,7 +166,7 @@ class DashboardController extends Controller
         $colors = ['primary', 'danger', 'warning', 'info', 'success', 'secondary', 'dark'];
 
         foreach ($users as $index => $user) {
-            // Hitung jumlah aktivitas user ini bulan ini
+            // Hitung jumlah aktivitas user ini bulan ini (mencocokkan kolom 'sales')
             $totalActivities = ReportActivity::whereMonth('tanggal', $month)
                 ->whereYear('tanggal', $year)
                 ->where(function($query) use ($user) {
@@ -189,6 +200,7 @@ class DashboardController extends Controller
     /**
      * ✅ Get detailed activities for a specific sales person
      * Menggabungkan data dari Report Activity, Competitor, dan Operational
+     * Endpoint: GET /dashboard/sales-details?sales=Nama%20Sales
      */
     public function getSalesDetails(Request $request)
     {
@@ -204,7 +216,7 @@ class DashboardController extends Controller
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
-        // ✅ 1. Ambil data dari Report Activity
+        // ✅ 1. Ambil data dari Report Activity (kolom tanggal digunakan untuk filter bulan)
         $reportActivities = ReportActivity::where('sales', $salesName)
             ->whereMonth('tanggal', $currentMonth)
             ->whereYear('tanggal', $currentYear)
@@ -227,6 +239,10 @@ class DashboardController extends Controller
         // ✅ 2. Ambil data Competitor yang dibuat user ini bulan ini
         $competitorActivities = Competitor::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
+            ->where(function($q) use ($salesName) {
+                // jika Competitor punya kolom 'sales' atau 'created_by' sesuaikan di sini
+                $q->where('sales', $salesName)->orWhere('created_by_name', $salesName);
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($comp) {
@@ -237,7 +253,7 @@ class DashboardController extends Controller
                     'activity' => "Input data competitor: {$comp->competitor_name}",
                     'location' => $comp->cluster ?? '-',
                     'status' => 'selesai',
-                    'hasil_kendala' => "Paket: {$comp->paket}, Harga: Rp " . number_format($comp->harga, 0, ',', '.'),
+                    'hasil_kendala' => "Paket: {$comp->paket}, Harga: Rp " . number_format($comp->harga ?? 0, 0, ',', '.'),
                     'evidence' => null,
                     'created_at' => $comp->created_at,
                 ];
@@ -246,6 +262,9 @@ class DashboardController extends Controller
         // ✅ 3. Ambil data Pelanggan (Operational) yang dibuat bulan ini
         $operationalActivities = Pelanggan::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
+            ->where(function($q) use ($salesName) {
+                $q->where('sales', $salesName)->orWhere('created_by_name', $salesName);
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($pelanggan) {
@@ -262,14 +281,14 @@ class DashboardController extends Controller
                 ];
             });
 
-        // ✅ 4. Gabungkan semua aktivitas dan urutkan berdasarkan tanggal terbaru
+        // ✅ 4. Gabungkan semua aktivitas dan urutkan berdasarkan tanggal terbaru (created_at)
         $allActivities = $reportActivities
             ->concat($competitorActivities)
             ->concat($operationalActivities)
             ->sortByDesc('created_at')
             ->values();
 
-        // ✅ 5. Ambil data user
+        // ✅ 5. Ambil data user (jika ada)
         $user = User::where('name', $salesName)->first();
         $userData = null;
 
@@ -294,6 +313,42 @@ class DashboardController extends Controller
             'sales' => $salesName,
             'user' => $userData,
             'activities' => $allActivities
+        ]);
+    }
+
+    /**
+     * Optional: endpoint ringkasan cepat (jumlah per tipe)
+     * GET /dashboard/sales-summary?sales=Nama%20Sales
+     */
+    public function getSalesSummary(Request $request)
+    {
+        $salesName = $request->input('sales');
+
+        if (empty($salesName)) {
+            return response()->json(['success' => false, 'message' => 'Nama sales kosong'], 400);
+        }
+
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+
+        $reportActivityCount = ReportActivity::where('sales', $salesName)
+            ->whereMonth('tanggal', $currentMonth)
+            ->whereYear('tanggal', $currentYear)
+            ->count();
+
+        $competitorCount = Competitor::whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->count();
+
+        $operationalCount = Pelanggan::whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'report_activity' => $reportActivityCount,
+            'report_competitor' => $competitorCount,
+            'report_operational' => $operationalCount,
         ]);
     }
 }

@@ -13,6 +13,9 @@
             </div>
         </div>
     </div>
+
+
+
     <!-- Alert Messages -->
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -103,12 +106,12 @@
 
             <!-- Reset Button -->
             <div class="row mt-3">
-            <div class="col-12">
-                <a href="{{ route('customer.search') }}" class="btn btn-primary btn-sm shadow-sm">
-                    <i class="fas fa-redo me-1"></i> Reset Filter
-                </a>
+                <div class="col-12">
+                    <a href="{{ route('customer.search') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-redo me-1"></i> Reset Filter
+                    </a>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 

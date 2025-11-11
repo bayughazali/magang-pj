@@ -19,70 +19,6 @@ class CustomerSearchController extends Controller
      */
    public function index(Request $request)
 {
-
-     // ✅ Tambahkan data wilayah (Bali, NTB, NTT)
-    $regionData = [
-        'Bali' => [
-            'Badung' => ['Kuta', 'Kuta Selatan', 'Kuta Utara', 'Mengwi', 'Abiansemal', 'Petang'],
-            'Bangli' => ['Bangli', 'Susut', 'Tembuku', 'Kintamani'],
-            'Buleleng' => ['Singaraja', 'Buleleng', 'Sukasada', 'Sawan', 'Kubutambahan', 'Tejakula', 'Seririt', 'Busungbiu', 'Banjar'],
-            'Denpasar' => ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan', 'Denpasar Utara'],
-            'Gianyar' => ['Gianyar', 'Blahbatuh', 'Sukawati', 'Ubud', 'Tegallalang', 'Tampaksiring', 'Payangan'],
-            'Jembrana' => ['Negara', 'Mendoyo', 'Pekutatan', 'Melaya', 'Jembrana'],
-            'Karangasem' => ['Karangasem', 'Abang', 'Bebandem', 'Rendang', 'Sidemen', 'Manggis', 'Selat', 'Kubu'],
-            'Klungkung' => ['Semarapura', 'Banjarangkan', 'Klungkung', 'Dawan'],
-            'Tabanan' => ['Tabanan', 'Kediri', 'Marga', 'Selemadeg', 'Kerambitan', 'Penebel'],
-        ],
-        'Nusa Tenggara Barat' => [
-            'Bima' => ['Bima', 'Palibelo', 'Donggo', 'Sanggar', 'Woha'],
-            'Dompu' => ['Dompu', 'Kempo', "Hu'u", 'Kilo', 'Woja'],
-            'Lombok Barat' => ['Gerung', 'Kediri', 'Narmada', 'Lingsar', 'Gunungsari', 'Labuapi', 'Lembar', 'Sekotong', 'Kuripan'],
-            'Lombok Tengah' => ['Praya', 'Pujut', 'Jonggat', 'Batukliang', 'Kopang', 'Janapria', 'Pringgarata', 'Praya Barat', 'Praya Timur'],
-            'Lombok Timur' => ['Selong', 'Masbagik', 'Aikmel', 'Pringgabaya', 'Labuhan Haji', 'Sakra', 'Terara', 'Montong Gading', 'Suwela'],
-            'Lombok Utara' => ['Tanjung', 'Gangga', 'Kayangan', 'Bayan', 'Pemenang'],
-            'Mataram' => ['Ampenan', 'Mataram', 'Cakranegara', 'Sekarbela', 'Sandubaya', 'Selaparang'],
-            'Sumbawa' => ['Sumbawa', 'Unter Iwes', 'Moyo Hilir', 'Moyo Hulu', 'Alas', 'Batu Lanteh'],
-            'Sumbawa Barat' => ['Taliwang', 'Jereweh', 'Sekongkang', 'Maluk', 'Brang Rea'],
-        ],
-        'Nusa Tenggara Timur' => [
-            'Alor' => ['Kalabahi', 'Alor Barat Daya', 'Alor Barat Laut', 'Alor Selatan', 'Alor Timur'],
-            'Belu' => ['Atambua', 'Tasifeto Barat', 'Tasifeto Timur', 'Malaka Barat', 'Malaka Tengah'],
-            'Ende' => ['Ende', 'Ndona', 'Nangapanda', 'Detusoko', 'Maurole', 'Wolowaru'],
-            'Flores Timur' => ['Larantuka', 'Ile Mandiri', 'Tanjung Bunga', 'Solor Timur', 'Solor Barat', 'Adonara Timur'],
-            'Kupang' => ['Kupang Tengah', 'Kupang Barat', 'Kupang Timur', 'Amarasi', 'Nekamese', 'Sulamu', 'Amfoang Selatan', 'Amfoang Utara'],
-        ],
-    ];
-
-    // 🔹 Ambil data pelanggan (optional)
-    $pelanggans = Pelanggan::query();
-
-    // Filter berdasarkan request
-    if ($request->filled('provinsi')) {
-        $pelanggans->where('provinsi', $request->provinsi);
-    }
-    if ($request->filled('kabupaten')) {
-        $pelanggans->where('kabupaten', $request->kabupaten);
-    }
-    if ($request->filled('kecamatan')) {
-        $pelanggans->where('kecamatan', $request->kecamatan);
-    }
-    if ($request->filled('bandwidth')) {
-        $pelanggans->where('bandwidth', $request->bandwidth);
-    }
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $pelanggans->where(function($q) use ($search) {
-            $q->where('id_pelanggan', 'like', "%$search%")
-              ->orWhere('nama_pelanggan', 'like', "%$search%")
-              ->orWhere('nomor_telepon', 'like', "%$search%")
-              ->orWhere('kode_fat', 'like', "%$search%");
-        });
-    }
-
-    $pelanggans = $pelanggans->paginate(10);
-
-    // ✅ Kirim $regionData ke view
-    return view('report.customer.search', compact('regionData', 'pelanggans'));
     // 🔹 1. Buat query awal
     $query = \App\Models\Pelanggan::query();
 
@@ -102,7 +38,7 @@ class CustomerSearchController extends Controller
     $pelanggans = $query->orderBy('created_at', 'desc')->paginate(15);
 
     // 🔹 4. Data tambahan dropdown (optional)
-    $clusters = \App\Models\Pelanggan::select('kecamatan')->distinct()->pluck('kecamatan');
+    $clusters = \App\Models\Pelanggan::select('cluster')->distinct()->pluck('cluster');
     $provinsiList = \App\Models\Pelanggan::select('provinsi')->distinct()->pluck('provinsi');
 
 // Filter berdasarkan Provinsi
@@ -111,8 +47,8 @@ class CustomerSearchController extends Controller
     }
 
     // Filter berdasarkan Cluster
-    if ($request->filled('kecamatan')) {
-        $query->where('kecamatan', strtoupper($request->kecamatan));
+    if ($request->filled('cluster')) {
+        $query->where('cluster', strtoupper($request->cluster));
     }
 
     // Ambil data hasil pencarian
@@ -120,41 +56,11 @@ class CustomerSearchController extends Controller
 
     // Data dropdown
     $provinsiList = ['BALI', 'NUSA TENGGARA BARAT', 'NUSA TENGGARA TIMUR'];
-    $kecamatans = [
-    // 🔹 Bali
-    'Kuta', 'Kuta Selatan', 'Kuta Utara', 'Mengwi', 'Abiansemal', 'Petang',
-    'Bangli', 'Susut', 'Tembuku', 'Kintamani',
-    'Singaraja', 'Buleleng', 'Sukasada', 'Sawan', 'Kubutambahan', 'Tejakula', 'Seririt', 'Busungbiu', 'Banjar',
-    'Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan', 'Denpasar Utara',
-    'Gianyar', 'Blahbatuh', 'Sukawati', 'Ubud', 'Tegallalang', 'Tampaksiring', 'Payangan',
-    'Negara', 'Mendoyo', 'Pekutatan', 'Melaya', 'Jembrana',
-    'Karangasem', 'Abang', 'Bebandem', 'Rendang', 'Sidemen', 'Manggis', 'Selat', 'Kubu',
-    'Semarapura', 'Banjarangkan', 'Klungkung', 'Dawan',
-    'Tabanan', 'Kediri', 'Marga', 'Selemadeg', 'Kerambitan', 'Penebel',
-
-    // 🔹 Nusa Tenggara Barat
-    'Bima', 'Palibelo', 'Donggo', 'Sanggar', 'Woha',
-    'Dompu', 'Kempo', "Hu'u", 'Kilo', 'Woja',
-    'Gerung', 'Kediri', 'Narmada', 'Lingsar', 'Gunungsari', 'Labuapi', 'Lembar', 'Sekotong', 'Kuripan',
-    'Praya', 'Pujut', 'Jonggat', 'Batukliang', 'Kopang', 'Janapria', 'Pringgarata', 'Praya Barat', 'Praya Timur',
-    'Selong', 'Masbagik', 'Aikmel', 'Pringgabaya', 'Labuhan Haji', 'Sakra', 'Terara', 'Montong Gading', 'Suwela',
-    'Tanjung', 'Gangga', 'Kayangan', 'Bayan', 'Pemenang',
-    'Ampenan', 'Mataram', 'Cakranegara', 'Sekarbela', 'Sandubaya', 'Selaparang',
-    'Sumbawa', 'Unter Iwes', 'Moyo Hilir', 'Moyo Hulu', 'Alas', 'Batu Lanteh',
-    'Taliwang', 'Jereweh', 'Sekongkang', 'Maluk', 'Brang Rea',
-
-    // 🔹 Nusa Tenggara Timur
-    'Kalabahi', 'Alor Barat Daya', 'Alor Barat Laut', 'Alor Selatan', 'Alor Timur',
-    'Atambua', 'Tasifeto Barat', 'Tasifeto Timur', 'Malaka Barat', 'Malaka Tengah',
-    'Ende', 'Ndona', 'Nangapanda', 'Detusoko', 'Maurole', 'Wolowaru',
-    'Larantuka', 'Ile Mandiri', 'Tanjung Bunga', 'Solor Timur', 'Solor Barat', 'Adonara Timur',
-    'Kupang Tengah', 'Kupang Barat', 'Kupang Timur', 'Amarasi', 'Nekamese', 'Sulamu', 'Amfoang Selatan', 'Amfoang Utara',
-];
-
+    $clusters = ['CLUSTER A', 'CLUSTER B', 'CLUSTER C', 'CLUSTER D'];
 
 
     // kirim ke view
-    return view('report.customer.search', compact('pelanggans', 'provinsiList', 'kecamatans'));
+    return view('report.customer.search', compact('pelanggans', 'provinsiList', 'clusters'));
 }
 
     /**
@@ -171,7 +77,7 @@ class CustomerSearchController extends Controller
             'kabupaten'      => 'required|string|max:100',
             'kode_fat'       => 'nullable|string|max:100',
             'alamat'         => 'required|string',
-            'kecamatan'      => 'required|string|max:100',
+            'cluster'        => 'required|string|max:100',
             'latitude'       => 'nullable|numeric|between:-90,90',
             'longitude'      => 'nullable|numeric|between:-180,180',
         ], [
