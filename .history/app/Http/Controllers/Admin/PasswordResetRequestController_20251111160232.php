@@ -12,28 +12,28 @@ class PasswordResetRequestController extends Controller
      * Menampilkan daftar request reset password
      */
     public function index(Request $request)
-    {
-        $status = $request->get('status', 'pending');
+{
+    $status = $request->get('status', 'pending');
 
-        $requests = PasswordResetRequest::with('user')
-            ->when($status === 'pending', function ($query) {
-                $query->where('status', 'pending');
-            })
-            ->when($status === 'used', function ($query) {
-                $query->where('status', 'used');
-            })
-            ->when($status === 'expired', function ($query) {
-                $query->where('status', 'expired')
-                    ->orWhere(function($q) {
-                        $q->where('status', 'pending')
-                            ->where('expires_at', '<=', now());
-                    });
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+    $requests = PasswordResetRequest::with('user')
+        ->when($status === 'pending', function ($query) {
+            $query->where('status', 'pending');
+        })
+        ->when($status === 'used', function ($query) {
+            $query->where('status', 'used');
+        })
+        ->when($status === 'expired', function ($query) {
+            $query->where('status', 'expired')
+                  ->orWhere(function($q) {
+                      $q->where('status', 'pending')
+                        ->where('expires_at', '<=', now());
+                  });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
 
-        return view('admin.password-resets.index', compact('requests', 'status'));
-    }
+    return view('admin.password-resets.index', compact('requests', 'status'));
+}
 
 
     /**
@@ -90,13 +90,12 @@ class PasswordResetRequestController extends Controller
     /**
      * Update status expired otomatis untuk semua request yang lewat waktu
      */
-   public function updateExpiredStatus()
+    public function updateExpiredStatus()
     {
         $updated = PasswordResetRequest::where('status', 'pending')
             ->where('expires_at', '<=', now())
             ->update(['status' => 'expired']);
 
-        return back()->with('success', "{$updated} request telah diupdate menjadi expired");
+        return back()->with('success', "$updated request telah diupdate menjadi expired");
     }
-
 }

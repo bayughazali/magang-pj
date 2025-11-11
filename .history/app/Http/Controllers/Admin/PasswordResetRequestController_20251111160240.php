@@ -90,13 +90,12 @@ class PasswordResetRequestController extends Controller
     /**
      * Update status expired otomatis untuk semua request yang lewat waktu
      */
-   public function updateExpiredStatus()
+    public function updateExpiredStatus()
     {
         $updated = PasswordResetRequest::where('status', 'pending')
             ->where('expires_at', '<=', now())
             ->update(['status' => 'expired']);
 
-        return back()->with('success', "{$updated} request telah diupdate menjadi expired");
+        return back()->with('success', "$updated request telah diupdate menjadi expired");
     }
-
 }

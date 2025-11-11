@@ -45,14 +45,9 @@ class PasswordResetRequest extends Model
         ]);
     }
 
-        public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-        public function user()
-    {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
-    }
+    public function scopePending($query)
+{
+    return $query->where('status', 'pending');
+}
 
 }
