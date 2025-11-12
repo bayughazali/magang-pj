@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class OperationalReportController extends Controller
 {
@@ -328,57 +329,59 @@ class OperationalReportController extends Controller
 }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nama_pelanggan' => 'required|string|max:255',
-            'bandwidth'      => 'required|string|max:100',
-            'alamat'         => 'required|string',
-            'provinsi'       => 'required|string|max:100',
-            'kabupaten'      => 'required|string|max:100',
-            'kecamatan'      => 'required|string|max:100',
-            'latitude'       => 'nullable|numeric|between:-90,90',
-            'longitude'      => 'nullable|numeric|between:-180,180',
-            'nomor_telepon'  => 'required|string|max:50',
-            'kode_fat'       => 'nullable|string|max:100',
-        ]);
+{
+    $validated = $request->validate([
+        'nama_pelanggan' => 'required|string|max:255',
+        'bandwidth'      => 'required|string|max:100',
+        'alamat'         => 'required|string',
+        'provinsi'       => 'required|string|max:100',
+        'kabupaten'      => 'required|string|max:100',
+        'kecamatan'      => 'required|string|max:100',
+        'latitude'       => 'nullable|numeric|between:-90,90',
+        'longitude'      => 'nullable|numeric|between:-180,180',
+        'nomor_telepon'  => 'required|string|max:50',
+        'kode_fat'       => 'nullable|string|max:100',
+    ]);
 
-        $validated['id_pelanggan'] = $this->generateNextCustomerId();
-        $validated['kecepatan'] = [$validated['bandwidth']];
+    // ✅ PAKSA sales_name dan user_id dari user yang login (KEAMANAN)
+    $validated['sales_name'] = Auth::user()->name;
+    $validated['user_id'] = Auth::id();
+    $validated['id_pelanggan'] = $this->generateNextCustomerId();
+    $validated['kecepatan'] = [$validated['bandwidth']];
 
-        // Generate kode FAT otomatis jika kosong
-        if (empty($validated['kode_fat'])) {
-            $regionData = $this->getRegionDataWithKecamatan();
-            if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
-                $baseFat = $regionData[$validated['provinsi']][$validated['kabupaten']]['kode_fat'];
-                
-                $query = Pelanggan::where('provinsi', $validated['provinsi'])
-                                 ->where('kabupaten', $validated['kabupaten']);
-                
-                if (!empty($validated['kecamatan'])) {
-                    $query->where('kecamatan', $validated['kecamatan']);
-                    $count = $query->count();
-                    $kecamatanCode = strtoupper(substr($validated['kecamatan'], 0, 3));
-                    $validated['kode_fat'] = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
-                } else {
-                    $count = $query->count();
-                    $validated['kode_fat'] = sprintf("%s-%03d", $baseFat, $count + 1);
-                }
+    // Generate kode FAT otomatis jika kosong
+    if (empty($validated['kode_fat'])) {
+        $regionData = $this->getRegionDataWithKecamatan();
+        if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
+            $baseFat = $regionData[$validated['provinsi']][$validated['kabupaten']]['kode_fat'];
+            
+            $query = Pelanggan::where('provinsi', $validated['provinsi'])
+                             ->where('kabupaten', $validated['kabupaten']);
+            
+            if (!empty($validated['kecamatan'])) {
+                $query->where('kecamatan', $validated['kecamatan']);
+                $count = $query->count();
+                $kecamatanCode = strtoupper(substr($validated['kecamatan'], 0, 3));
+                $validated['kode_fat'] = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
+            } else {
+                $count = $query->count();
+                $validated['kode_fat'] = sprintf("%s-%03d", $baseFat, $count + 1);
             }
-        }
-
-        try {
-            Pelanggan::create($validated);
-            return redirect()->route('report.operational.index')
-                ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan dengan kode FAT: {$validated['kode_fat']}!");
-        } catch (\Exception $e) {
-            Log::error('Store Pelanggan Error:', [
-                'error' => $e->getMessage(),
-                'data' => $validated
-            ]);
-            return back()->withInput()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }
 
+    try {
+        Pelanggan::create($validated);
+        return redirect()->route('report.operational.index')
+            ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan! Kode FAT: {$validated['kode_fat']} | Sales: {$validated['sales_name']}");
+    } catch (\Exception $e) {
+        Log::error('Store Pelanggan Error:', [
+            'error' => $e->getMessage(),
+            'data' => $validated
+        ]);
+        return back()->withInput()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+    }
+}
     public function edit($id)
     {
         try {
@@ -396,61 +399,69 @@ class OperationalReportController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'id_pelanggan'   => [
-                'required',
-                'string',
-                'max:100',
-                \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
-            ],
-            'nama_pelanggan' => 'required|string|max:255',
-            'bandwidth'      => 'required|string|max:100',
-            'nomor_telepon'  => 'required|string|max:50',
-            'provinsi'       => 'required|string|max:100',
-            'kabupaten'      => 'required|string|max:100',
-            'kecamatan'      => 'required|string|max:100',
-            'kode_fat'       => 'nullable|string|max:100',
-            'alamat'         => 'required|string',
-            'latitude'       => 'nullable|numeric|between:-90,90',
-            'longitude'      => 'nullable|numeric|between:-180,180',
-        ]);
+{
+    $validated = $request->validate([
+        'id_pelanggan'   => [
+            'required',
+            'string',
+            'max:100',
+            \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
+        ],
+        'nama_pelanggan' => 'required|string|max:255',
+        'bandwidth'      => 'required|string|max:100',
+        'nomor_telepon'  => 'required|string|max:50',
+        'provinsi'       => 'required|string|max:100',
+        'kabupaten'      => 'required|string|max:100',
+        'kecamatan'      => 'required|string|max:100',
+        'kode_fat'       => 'nullable|string|max:100',
+        'alamat'         => 'required|string',
+        'latitude'       => 'nullable|numeric|between:-90,90',
+        'longitude'      => 'nullable|numeric|between:-180,180',
+    ]);
 
-        try {
-            $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
+    try {
+        $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
 
-            if ($validated['id_pelanggan'] !== $id) {
-                $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
-                if ($exists) {
-                    return redirect()
-                        ->back()
-                        ->withInput()
-                        ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
-                }
+        // ✅ HANYA ADMIN yang bisa ubah sales_name
+        if (Auth::user()->role === 'admin' && $request->has('sales_name')) {
+            $validated['sales_name'] = $request->sales_name;
+        } else {
+            // User biasa tidak bisa ubah sales_name
+            $validated['sales_name'] = $pelanggan->sales_name;
+            $validated['user_id'] = $pelanggan->user_id;
+        }
 
-                DB::transaction(function () use ($pelanggan, $validated) {
-                    $oldId = $pelanggan->id_pelanggan;
-                    $pelanggan->delete();
-                    Pelanggan::create($validated);
-                    Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
-                });
-            } else {
-                $pelanggan->update($validated);
+        if ($validated['id_pelanggan'] !== $id) {
+            $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
+            if ($exists) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
             }
 
-            return redirect()
-                ->route('report.operational.index')
-                ->with('success', "Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
-
-        } catch (\Exception $e) {
-            Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
-            return redirect()
-                ->back()
-                ->withInput()
-                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+            DB::transaction(function () use ($pelanggan, $validated) {
+                $oldId = $pelanggan->id_pelanggan;
+                $pelanggan->delete();
+                Pelanggan::create($validated);
+                Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
+            });
+        } else {
+            $pelanggan->update($validated);
         }
-    }
 
+        return redirect()
+            ->route('report.operational.index')
+            ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
+
+    } catch (\Exception $e) {
+        Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
+        return redirect()
+            ->back()
+            ->withInput()
+            ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+    }
+}
     public function destroy($pelanggan)
     {
         try {

@@ -9,15 +9,32 @@
     <div class="card-body">
 
      <!-- FORM INPUT COMPETITOR -->
-      {{-- 🔹 Ubah action form ke route competitor.store --}}
       <form id="competitorForm" action="{{ route('competitor.store') }}" method="POST">
         @csrf
+        
+        {{-- NAMA SALES OTOMATIS --}}
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label"><strong>Nama Sales</strong></label>
+            <input type="text" 
+                   class="form-control bg-light" 
+                   value="{{ auth()->user()->name }}" 
+                   readonly 
+                   style="cursor: not-allowed;">
+            {{-- Hidden input untuk dikirim ke backend --}}
+            <input type="hidden" name="sales_name" value="{{ auth()->user()->name }}">
+            <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+            <small class="text-muted">
+              <i class="fas fa-info-circle"></i> Nama sales otomatis terisi dari akun Anda
+            </small>
+          </div>
+        </div>
+
         <div class="row mb-3">
           <div class="col-md-4">
             <label class="form-label"><strong>Pilih Cluster</strong></label>
             <select class="form-control select2" name="cluster" id="clusterSelect" required>
               <option value="">-- Pilih Cluster --</option>
-              {{-- 🔹 PERBAIKAN: Ambil cluster dari ReportActivity yang sudah ada data --}}
               @php
                 $availableClusters = \App\Models\ReportActivity::select('cluster')
                     ->distinct()
@@ -141,6 +158,7 @@
               <thead class="table-dark">
                 <tr>
                   <th>No</th>
+                  <th>Sales</th>
                   <th>Cluster</th>
                   <th>Nama Competitor</th>
                   <th>Paket</th>
@@ -149,7 +167,6 @@
                   <th>Harga</th>
                   <th>Fitur Tambahan</th>
                   <th>Keterangan</th>
-                  {{-- Kolom Aksi hanya muncul jika admin --}}
                   @if(auth()->user()->role === 'admin')
                     <th>Aksi</th>
                   @endif
@@ -159,6 +176,10 @@
                 @forelse($competitors as $index => $item)
                 <tr>
                   <td>{{ $index + 1 }}</td>
+                  <td>
+                    <i class="fas fa-user-circle text-primary"></i>
+                    <strong>{{ $item->sales_name ?? '-' }}</strong>
+                  </td>
                   <td><span class="badge bg-info">{{ $item->cluster }}</span></td>
                   <td>{{ $item->competitor_name }}</td>
                   <td>{{ $item->paket ?? '-' }}</td>
@@ -168,15 +189,12 @@
                   <td>{{ $item->fitur_tambahan ?? '-' }}</td>
                   <td>{{ $item->keterangan ?? '-' }}</td>
 
-                  {{-- Kolom Aksi: Hanya muncul jika user adalah admin --}}
                   @if(auth()->user()->role === 'admin')
                     <td>
-                      {{-- Edit --}}
                       <a href="{{ route('competitor.edit', $item->id) }}" class="btn btn-sm btn-primary">
                         <i class="fas fa-edit"></i>
                       </a>
 
-                      {{-- Delete --}}
                       <form action="{{ route('competitor.destroy', $item->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')
@@ -189,7 +207,7 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="{{ auth()->user()->role === 'admin' ? '10' : '9' }}">
+                  <td colspan="{{ auth()->user()->role === 'admin' ? '11' : '10' }}">
                     Belum ada data competitor
                   </td>
                 </tr>
@@ -312,6 +330,20 @@ document.getElementById("addMoreBtn").addEventListener("click", function() {
 </script>
 
 <style>
+  /* Style untuk input readonly */
+  .form-control[readonly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    border: 1px solid #ced4da;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .form-control[readonly]:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+  }
+
   /* Style dropdown modern */
   select.form-select {
     appearance: none;

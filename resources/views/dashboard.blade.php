@@ -468,6 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ✅ SHOW SALES DETAIL MODAL
+// ✅ SHOW SALES DETAIL MODAL - UPDATED
 function showSalesDetail(salesName) {
     const modal = new bootstrap.Modal(document.getElementById('salesDetailModal'));
     document.getElementById('salesNameTitle').textContent = salesName;
@@ -525,48 +526,49 @@ function showSalesDetail(salesName) {
                 `;
             }
 
-            // ✅ Tampilkan statistik aktivitas
-            if (data.activities && data.activities.length > 0) {
-                const reportCount = data.activities.filter(a => a.type === 'Report Activity').length;
-                const competitorCount = data.activities.filter(a => a.type === 'Report Competitor').length;
-                const operationalCount = data.activities.filter(a => a.type === 'Report Operational').length;
+            // ✅ Hitung jumlah per tipe aktivitas
+            const reportCount = data.activities.filter(a => a.type === 'Report Activity').length;
+            const competitorCount = data.activities.filter(a => a.type === 'Report Competitor').length;
+            const operationalCount = data.activities.filter(a => a.type === 'Report Operational').length;
 
-                html += `
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-clipboard-list fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${reportCount}</h4>
-                                    <small>Report Activity</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-danger text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-users fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${competitorCount}</h4>
-                                    <small>Report Competitor</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card border-0 bg-success text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-user-plus fa-2x mb-2"></i>
-                                    <h4 class="mb-0">${operationalCount}</h4>
-                                    <small>Report Operational</small>
-                                </div>
+            // ✅ Tampilkan statistik aktivitas
+            html += `
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-primary text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                                <h4 class="mb-0">${reportCount}</h4>
+                                <small>Report Activity</small>
                             </div>
                         </div>
                     </div>
-                `;
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-danger text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <h4 class="mb-0">${competitorCount}</h4>
+                                <small>Report Competitor</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                <h4 class="mb-0">${operationalCount}</h4>
+                                <small>Report Operational</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-                // ✅ Tampilkan timeline aktivitas dengan style yang berbeda per tipe
+            // ✅ Tampilkan timeline aktivitas
+            if (data.activities && data.activities.length > 0) {
                 html += '<div class="timeline">';
 
-                data.activities.forEach((activity, index) => {
+                data.activities.forEach((activity) => {
                     let badgeClass = 'bg-primary';
                     let iconClass = 'fa-clipboard-list';
 

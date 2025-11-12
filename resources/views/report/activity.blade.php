@@ -30,11 +30,22 @@
 
                 <form action="{{ route('reports.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+                    
+                    {{-- SALES OTOMATIS DARI USER LOGIN - READONLY --}}
                     <div class="form-group mb-3">
                         <label>Sales</label>
-                        <input type="text" name="sales" class="form-control" placeholder="Nama Sales"
-                               value="{{ old('sales') }}" required>
+                        <input type="text" 
+                               class="form-control bg-light" 
+                               value="{{ auth()->user()->name }}" 
+                               readonly 
+                               style="cursor: not-allowed;">
+                        {{-- Hidden input untuk dikirim ke backend --}}
+                        <input type="hidden" name="sales" value="{{ auth()->user()->name }}">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Nama sales otomatis terisi dari akun Anda
+                        </small>
                     </div>
+
                     <div class="form-group mb-3">
                         <label>Aktivitas / Kegiatan</label>
                         <input type="text" name="aktivitas" class="form-control" placeholder="Contoh: Kunjungan PT ABC"
@@ -43,13 +54,8 @@
                     <div class="form-group mb-3">
                         <label>Tanggal</label>
                         <input type="date" name="tanggal" class="form-control"
-                               value="{{ old('tanggal') }}" required>
+                               value="{{ old('tanggal', date('Y-m-d')) }}" required>
                     </div>
-                    {{-- <div class="form-group mb-3">
-                        <label>Lokasi</label>
-                        <input type="text" name="lokasi" class="form-control" placeholder="Contoh: Bondowoso"
-                               value="{{ old('lokasi') }}" required>
-                    </div> --}}
 
                     {{-- Blok Cluster --}}
                     <div class="form-group mb-3">
@@ -89,7 +95,9 @@
                             <option value="proses" {{ old('status') == 'proses' ? 'selected' : '' }}>Proses</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Simpan</button>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save"></i> Simpan Report
+                    </button>
                 </form>
             </div>
         </div>
@@ -110,7 +118,6 @@
                                 <th width="10%">Sales</th>
                                 <th width="15%">Aktivitas</th>
                                 <th width="10%">Tanggal</th>
-                                {{-- <th width="10%">Lokasi</th> --}}
                                 <th width="8%">Lokasi (Cluster)</th>
                                 <th width="10%">Evidence</th>
                                 <th width="20%">Hasil / Kendala</th>
@@ -124,10 +131,12 @@
                             @forelse($reports as $i => $report)
                                 <tr>
                                     <td>{{ $i+1 }}</td>
-                                    <td>{{ $report->sales }}</td>
+                                    <td>
+                                        <i class="fas fa-user-circle text-primary"></i> 
+                                        {{ $report->sales }}
+                                    </td>
                                     <td>{{ Str::limit($report->aktivitas, 20) }}</td>
                                     <td>{{ \Carbon\Carbon::parse($report->tanggal)->format('d/m/Y') }}</td>
-                                    {{-- <td>{{ $report->lokasi }}</td> --}}
                                     <td>{{ $report->cluster }}</td>
                                     <td class="text-center">
                                         @if($report->evidence && Storage::disk('public')->exists($report->evidence))
@@ -182,9 +191,13 @@
                                                     <div class="modal-body">
                                                         <div class="row">
                                                             <div class="col-md-6">
+                                                                {{-- ADMIN TETAP BISA EDIT NAMA SALES --}}
                                                                 <div class="mb-3">
                                                                     <label>Sales</label>
                                                                     <input type="text" name="sales" class="form-control" value="{{ $report->sales }}" required>
+                                                                    <small class="text-info">
+                                                                        <i class="fas fa-info-circle"></i> Admin dapat mengubah nama sales
+                                                                    </small>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
@@ -198,14 +211,10 @@
                                                             <label>Aktivitas</label>
                                                             <input type="text" name="aktivitas" class="form-control" value="{{ $report->aktivitas }}" required>
                                                         </div>
-                                                        {{-- <div class="mb-3">
-                                                            <label>Lokasi</label>
-                                                            <input type="text" name="lokasi" class="form-control" value="{{ $report->lokasi }}" required>
-                                                        </div> --}}
 
                                                         <div class="mb-3">
                                                             <label>Cluster</label>
-                                                            <select name="cluster" class="form-control select2" required style="width: 100%;">
+                                                            <select name="cluster" class="form-control select2-modal" required>
                                                                 <option value="">-- Pilih Cluster --</option>
                                                                 @foreach($competitors as $provinsi => $kabupatens)
                                                                     <optgroup label="{{ $provinsi }}">
@@ -287,34 +296,64 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- Scripts --}}
+@push('styles')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet"/>
+<style>
+    /* Style untuk input readonly */
+    .form-control[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+        border: 1px solid #ced4da;
+    }
+    
+    .form-control[readonly]:focus {
+        box-shadow: none;
+        border-color: #ced4da;
+    }
+</style>
+@endpush
+
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    $('.select2').select2({ placeholder: 'Cari cluster…', width: '100%' });
-    document.querySelectorAll('.modal').forEach(function(modalElement) {
-        modalElement.addEventListener('shown.bs.modal', function () {
-            var selectInModal = modalElement.querySelector('.select2');
-            if (selectInModal) {
-                $(selectInModal).select2('destroy');
-                $(selectInModal).select2({
-                    placeholder: 'Cari cluster…',
-                    width: '100%',
-                    dropdownParent: $(modalElement).find('.modal-content')
-                });
+$(document).ready(function() {
+    // Inisialisasi Select2 untuk form utama
+    $('.select2').select2({ 
+        placeholder: 'Cari cluster…', 
+        width: '100%',
+        allowClear: true
+    });
+
+    // Handle Select2 di modal edit
+    $('.modal').on('shown.bs.modal', function () {
+        var modal = $(this);
+        modal.find('.select2-modal').each(function() {
+            $(this).select2({
+                placeholder: 'Cari cluster…',
+                width: '100%',
+                allowClear: true,
+                dropdownParent: modal.find('.modal-content')
+            });
+        });
+    });
+
+    // Destroy Select2 saat modal ditutup
+    $('.modal').on('hidden.bs.modal', function () {
+        $(this).find('.select2-modal').each(function() {
+            if ($(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2('destroy');
             }
         });
     });
-  });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+});
+
+// Fungsi untuk menampilkan gambar di modal
 function showImage(src) {
     document.getElementById('modalImage').src = src;
-    new bootstrap.Modal(document.getElementById('imageModal')).show();
+    var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+    imageModal.show();
 }
 </script>
-
-@endsection
+@endpush

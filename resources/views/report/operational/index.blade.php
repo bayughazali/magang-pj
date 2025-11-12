@@ -29,6 +29,22 @@
             <form action="{{ route('report.operational.store') }}" method="POST" class="mb-4">
                 @csrf
                <div class="row g-3">
+                    {{-- NAMA SALES OTOMATIS --}}
+                    <div class="col-md-3">
+                        <label class="form-label">Nama Sales</label>
+                        <input type="text" 
+                               class="form-control bg-light fw-bold" 
+                               value="{{ auth()->user()->name }}" 
+                               readonly 
+                               style="cursor: not-allowed;">
+                        {{-- Hidden input untuk dikirim ke backend --}}
+                        <input type="hidden" name="sales_name" value="{{ auth()->user()->name }}">
+                        <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Sales otomatis dari akun Anda
+                        </small>
+                    </div>
+
                     <div class="col-md-3">
                         <label class="form-label">ID Pelanggan</label>
                         <input type="text"
@@ -50,6 +66,7 @@
                             <option value="100 Mbps" {{ old('bandwidth') == '100 Mbps' ? 'selected' : '' }}>100 Mbps</option>
                         </select>
                     </div>
+
                     <div class="col-md-3">
                         <label class="form-label">Nomor Telepon *</label>
                         <input type="text" name="nomor_telepon" class="form-control" value="{{ old('nomor_telepon') }}" required>
@@ -120,6 +137,7 @@
                     <thead class="table-primary">
                         <tr>
                             <th style="width: 50px;">No</th>
+                            <th>Sales</th>
                             <th>ID Pelanggan</th>
                             <th>Nama</th>
                             <th>Bandwidth</th>
@@ -139,6 +157,14 @@
                         @forelse($pelanggans as $index => $p)
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
+                                <td>
+                                    @if($p->sales_name)
+                                        <i class="fas fa-user-circle text-primary"></i>
+                                        <strong>{{ $p->sales_name }}</strong>
+                                    @else
+                                        <span class="badge bg-secondary">-</span>
+                                    @endif
+                                </td>
                                 <td><strong>{{ $p->id_pelanggan }}</strong></td>
                                 <td>{{ $p->nama_pelanggan }}</td>
                                 <td><span class="badge bg-info">{{ $p->bandwidth }}</span></td>
@@ -179,7 +205,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()->role === 'admin' ? '12' : '11' }}" class="text-center text-muted py-4">
+                                <td colspan="{{ auth()->user()->role === 'admin' ? '13' : '12' }}" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-3x mb-3"></i>
                                     <br>Belum ada data pelanggan
                                     <br><small>Silakan input data pelanggan di form di atas</small>
@@ -285,309 +311,327 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+
+.form-control[readonly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    font-weight: 600;
+}
 </style>
 
 {{-- LEAFLET CSS --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
-{{-- JAVASCRIPT --}}
+{{-- LEAFLET JS --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+{{-- JAVASCRIPT LENGKAP --}}
 <script>
-// ✅ Gunakan nama variabel unik untuk menghindari konflik dengan Argon template
-let customerMap, customerMarker;
-let mapInitialized = false;
+console.log('🚀 Script cascade dropdown dimuat...');
 
-const regions = {
-    bali: { center: [-8.409518, 115.188916], zoom: 10 },
-    ntb: { center: [-8.652894, 117.362238], zoom: 9 },
-    ntt: { center: [-8.874650, 121.727200], zoom: 8 }
-};
-
-// CASCADE DROPDOWN
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DOM Content Loaded');
+
+    // ========================================
+    // 🗺️ INISIALISASI PETA LEAFLET
+    // ========================================
+    const map = L.map('map').setView([-8.409518, 115.188916], 10);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    let marker = L.marker([-8.409518, 115.188916], { 
+        draggable: true,
+        icon: L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        })
+    }).addTo(map);
+
+    marker.on('dragend', function(e) {
+        const position = marker.getLatLng();
+        updateCoordinates(position.lat, position.lng);
+    });
+
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+
+    function updateCoordinates(lat, lng) {
+        document.getElementById('latitude').value = lat.toFixed(6);
+        document.getElementById('longitude').value = lng.toFixed(6);
+        document.getElementById('display-lat').textContent = lat.toFixed(6);
+        document.getElementById('display-lng').textContent = lng.toFixed(6);
+    }
+
+    window.focusRegion = function(region) {
+        const coordinates = {
+            'bali': [-8.4095, 115.1889, 10],
+            'ntb': [-8.6529, 116.3249, 9],
+            'ntt': [-8.6574, 121.0794, 8]
+        };
+        
+        if (coordinates[region]) {
+            const [lat, lng, zoom] = coordinates[region];
+            map.setView([lat, lng], zoom);
+            marker.setLatLng([lat, lng]);
+            updateCoordinates(lat, lng);
+        }
+    };
+
+    // ========================================
+    // 🔄 CASCADE DROPDOWN
+    // ========================================
     const provinsiSelect = document.getElementById('provinsi');
     const kabupatenSelect = document.getElementById('kabupaten');
     const kecamatanSelect = document.getElementById('kecamatan');
     const kodeFatInput = document.getElementById('kode_fat');
 
-    // Provinsi change
+    if (!provinsiSelect || !kabupatenSelect || !kecamatanSelect) {
+        console.error('❌ Dropdown element tidak ditemukan!');
+        return;
+    }
+
+    console.log('✅ Semua dropdown element ditemukan');
+
+    // DATA REGION HARDCODED (BACKUP jika API gagal)
+    const regionDataHardcoded = {
+        'Bali': {
+            'Badung': ['Kuta', 'Kuta Selatan', 'Kuta Utara', 'Mengwi', 'Abiansemal', 'Petang'],
+            'Bangli': ['Bangli', 'Susut', 'Tembuku', 'Kintamani'],
+            'Buleleng': ['Singaraja', 'Buleleng', 'Sukasada', 'Sawan', 'Kubutambahan', 'Tejakula', 'Seririt', 'Busungbiu', 'Banjar'],
+            'Denpasar': ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan', 'Denpasar Utara'],
+            'Gianyar': ['Gianyar', 'Blahbatuh', 'Sukawati', 'Ubud', 'Tegallalang', 'Tampaksiring', 'Payangan'],
+            'Jembrana': ['Negara', 'Mendoyo', 'Pekutatan', 'Melaya', 'Jembrana'],
+            'Karangasem': ['Karangasem', 'Abang', 'Bebandem', 'Rendang', 'Sidemen', 'Manggis', 'Selat', 'Kubu'],
+            'Klungkung': ['Semarapura', 'Banjarangkan', 'Klungkung', 'Dawan'],
+            'Tabanan': ['Tabanan', 'Kediri', 'Marga', 'Selemadeg', 'Kerambitan', 'Penebel']
+        },
+        'Nusa Tenggara Barat': {
+            'Bima': ['Bima', 'Palibelo', 'Donggo', 'Sanggar', 'Woha'],
+            'Dompu': ['Dompu', 'Kempo', 'Hu\'u', 'Kilo', 'Woja'],
+            'Lombok Barat': ['Gerung', 'Kediri', 'Narmada', 'Lingsar', 'Gunungsari', 'Labuapi', 'Lembar', 'Sekotong', 'Kuripan'],
+            'Lombok Tengah': ['Praya', 'Pujut', 'Jonggat', 'Batukliang', 'Kopang', 'Janapria', 'Pringgarata', 'Praya Barat', 'Praya Timur'],
+            'Lombok Timur': ['Selong', 'Masbagik', 'Aikmel', 'Pringgabaya', 'Labuhan Haji', 'Sakra', 'Terara', 'Montong Gading', 'Suwela'],
+            'Lombok Utara': ['Tanjung', 'Gangga', 'Kayangan', 'Bayan', 'Pemenang'],
+            'Mataram': ['Ampenan', 'Mataram', 'Cakranegara', 'Sekarbela', 'Sandubaya', 'Selaparang'],
+            'Sumbawa': ['Sumbawa', 'Unter Iwes', 'Moyo Hilir', 'Moyo Hulu', 'Alas', 'Batu Lanteh'],
+            'Sumbawa Barat': ['Taliwang', 'Jereweh', 'Sekongkang', 'Maluk', 'Brang Rea']
+        },
+        'Nusa Tenggara Timur': {
+            'Alor': ['Kalabahi', 'Alor Barat Daya', 'Alor Barat Laut', 'Alor Selatan', 'Alor Timur'],
+            'Belu': ['Atambua', 'Tasifeto Barat', 'Tasifeto Timur', 'Malaka Barat', 'Malaka Tengah'],
+            'Ende': ['Ende', 'Ndona', 'Nangapanda', 'Detusoko', 'Maurole', 'Wolowaru'],
+            'Flores Timur': ['Larantuka', 'Ile Mandiri', 'Tanjung Bunga', 'Solor Timur', 'Solor Barat', 'Adonara Timur'],
+            'Kupang': ['Kupang Tengah', 'Kupang Barat', 'Kupang Timur', 'Amarasi', 'Nekamese', 'Sulamu', 'Amfoang Selatan', 'Amfoang Utara']
+        }
+    };
+
+    // HANDLER PROVINSI CHANGE
     provinsiSelect.addEventListener('change', function() {
         const provinsi = this.value;
+        console.log('🔹 Provinsi dipilih:', provinsi);
+        
         kabupatenSelect.innerHTML = '<option value="">-- Pilih Kabupaten --</option>';
-        kabupatenSelect.disabled = true;
         kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        kecamatanSelect.disabled = true;
         kodeFatInput.value = '';
+        
+        if (!provinsi) {
+            kabupatenSelect.disabled = true;
+            kecamatanSelect.disabled = true;
+            return;
+        }
 
-        if (provinsi) {
-            fetch(`/report/operational/get-kabupaten?provinsi=${encodeURIComponent(provinsi)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.kabupaten && data.kabupaten.length > 0) {
-                        data.kabupaten.forEach(kab => {
-                            const option = document.createElement('option');
-                            option.value = kab;
-                            option.textContent = kab;
-                            kabupatenSelect.appendChild(option);
-                        });
-                        kabupatenSelect.disabled = false;
-                        showNotification('Kabupaten berhasil dimuat!', 'success');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading kabupaten:', error);
-                    showNotification('Gagal memuat data kabupaten', 'error');
-                });
+        // GUNAKAN DATA HARDCODED LANGSUNG (lebih reliable)
+        if (regionDataHardcoded[provinsi]) {
+            console.log('✅ Menggunakan data hardcoded');
+            const kabupatenList = Object.keys(regionDataHardcoded[provinsi]);
+            
+            kabupatenSelect.disabled = false;
+            kabupatenList.forEach(kab => {
+                const option = document.createElement('option');
+                option.value = kab;
+                option.textContent = kab;
+                kabupatenSelect.appendChild(option);
+            });
+            
+            console.log('✅ Kabupaten dimuat:', kabupatenList.length, 'items');
+        } else {
+            console.error('❌ Provinsi tidak ditemukan di data hardcoded');
+            alert('Data provinsi tidak ditemukan');
         }
     });
 
-    // Kabupaten change - Load kecamatan
+    // HANDLER KABUPATEN CHANGE
     kabupatenSelect.addEventListener('change', function() {
         const provinsi = provinsiSelect.value;
         const kabupaten = this.value;
+        console.log('🔹 Kabupaten dipilih:', kabupaten);
+        
         kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        kecamatanSelect.disabled = true;
         kodeFatInput.value = '';
+        
+        if (!kabupaten) {
+            kecamatanSelect.disabled = true;
+            return;
+        }
 
-        if (provinsi && kabupaten) {
-            console.log('📍 Loading kecamatan for:', { provinsi, kabupaten });
+        // GUNAKAN DATA HARDCODED
+        if (regionDataHardcoded[provinsi] && regionDataHardcoded[provinsi][kabupaten]) {
+            const kecamatanList = regionDataHardcoded[provinsi][kabupaten];
             
-            const url = `/report/operational/get-kecamatan?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}`;
-            console.log('🔗 Request URL:', url);
-            
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                }
-            })
-            .then(response => {
-                console.log('📥 Response status:', response.status);
-                console.log('📥 Response headers:', response.headers.get('content-type'));
-                
-                // Cek apakah response adalah JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        console.error('❌ Response bukan JSON:', text);
-                        throw new Error('Server mengembalikan HTML, bukan JSON. Cek route atau controller.');
-                    });
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ Kecamatan data:', data);
-                
-                if (data.success && data.kecamatan && Array.isArray(data.kecamatan) && data.kecamatan.length > 0) {
-                    data.kecamatan.forEach(kec => {
-                        const option = document.createElement('option');
-                        option.value = kec;
-                        option.textContent = kec;
-                        kecamatanSelect.appendChild(option);
-                    });
-                    kecamatanSelect.disabled = false;
-                    showNotification(`✅ ${data.kecamatan.length} kecamatan berhasil dimuat!`, 'success');
-                } else {
-                    console.warn('⚠️ Data kecamatan kosong atau invalid:', data);
-                    showNotification('⚠️ Data kecamatan tidak ditemukan', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('❌ Error loading kecamatan:', error);
-                showNotification('❌ Gagal memuat kecamatan: ' + error.message, 'error');
+            kecamatanSelect.disabled = false;
+            kecamatanList.forEach(kec => {
+                const option = document.createElement('option');
+                option.value = kec;
+                option.textContent = kec;
+                kecamatanSelect.appendChild(option);
             });
+            
+            console.log('✅ Kecamatan dimuat:', kecamatanList.length, 'items');
+        }
+
+        // Generate FAT
+        generateKodeFat(provinsi, kabupaten, '');
+    });
+
+    // HANDLER KECAMATAN CHANGE
+    kecamatanSelect.addEventListener('change', function() {
+        const provinsi = provinsiSelect.value;
+        const kabupaten = kabupatenSelect.value;
+        const kecamatan = this.value;
+        
+        if (kecamatan) {
+            generateKodeFat(provinsi, kabupaten, kecamatan);
         }
     });
 
-    // Kecamatan change - Generate FAT code
-    // Kecamatan change - Generate FAT code
-kecamatanSelect.addEventListener('change', function() {
-    const provinsi = provinsiSelect.value;
-    const kabupaten = kabupatenSelect.value;
-    const kecamatan = this.value;
+    // FUNCTION GENERATE KODE FAT
+    function generateKodeFat(provinsi, kabupaten, kecamatan) {
+        // Mapping kode FAT berdasarkan kabupaten (sesuai dengan controller)
+        const fatMapping = {
+            'Bali': {
+                'Badung': 'FAT-BDG',
+                'Bangli': 'FAT-BGL',
+                'Buleleng': 'FAT-BLL',
+                'Denpasar': 'FAT-DPS',
+                'Gianyar': 'FAT-GNY',
+                'Jembrana': 'FAT-JMB',
+                'Karangasem': 'FAT-KAS',
+                'Klungkung': 'FAT-KLK',
+                'Tabanan': 'FAT-TBN'
+            },
+            'Nusa Tenggara Barat': {
+                'Bima': 'FAT-BIM',
+                'Dompu': 'FAT-DOM',
+                'Lombok Barat': 'FAT-LBR',
+                'Lombok Tengah': 'FAT-LTG',
+                'Lombok Timur': 'FAT-LTM',
+                'Lombok Utara': 'FAT-LUT',
+                'Mataram': 'FAT-MTR',
+                'Sumbawa': 'FAT-SBW',
+                'Sumbawa Barat': 'FAT-SBR'
+            },
+            'Nusa Tenggara Timur': {
+                'Alor': 'FAT-ALR',
+                'Belu': 'FAT-BLU',
+                'Ende': 'FAT-END',
+                'Flores Timur': 'FAT-FLT',
+                'Kupang': 'FAT-KPG'
+            }
+        };
 
-    // Reset kode FAT
-    kodeFatInput.value = '';
+        console.log('🔹 Generating FAT untuk:', {provinsi, kabupaten, kecamatan});
 
-    if (provinsi && kabupaten && kecamatan) {
-        console.log('🔢 Generating FAT code for:', { provinsi, kabupaten, kecamatan });
+        // Cek apakah mapping ada
+        if (!fatMapping[provinsi] || !fatMapping[provinsi][kabupaten]) {
+            console.error('❌ Mapping FAT tidak ditemukan untuk:', provinsi, kabupaten);
+            return;
+        }
+
+        const baseFat = fatMapping[provinsi][kabupaten];
         
-        const url = `/report/operational/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}&kecamatan=${encodeURIComponent(kecamatan)}`;
-        console.log('🔗 FAT Request URL:', url);
+        // Jika ada kecamatan, tambahkan kode kecamatan
+        if (kecamatan) {
+            const kecamatanCode = kecamatan.substring(0, 3).toUpperCase();
+            
+            // Hitung jumlah pelanggan yang sudah ada (simulasi - bisa diganti dengan fetch real count)
+            // Format: FAT-BDG-KUT-001
+            const kodeFat = `${baseFat}-${kecamatanCode}-001`;
+            
+            kodeFatInput.value = kodeFat;
+            kodeFatInput.classList.add('fat-updated');
+            setTimeout(() => {
+                kodeFatInput.classList.remove('fat-updated');
+            }, 1200);
+            
+            console.log('✅ Kode FAT generated:', kodeFat);
+        } else {
+            // Jika belum ada kecamatan, tampilkan base FAT
+            const kodeFat = `${baseFat}-001`;
+            kodeFatInput.value = kodeFat;
+            console.log('✅ Kode FAT base generated:', kodeFat);
+        }
+
+        // OPTIONAL: Fetch dari server untuk mendapatkan nomor urut yang akurat
+        const url = `/api/get-kode-fat?provinsi=${encodeURIComponent(provinsi)}&kabupaten=${encodeURIComponent(kabupaten)}&kecamatan=${encodeURIComponent(kecamatan)}`;
         
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            }
-        })
-        .then(response => {
-            console.log('📥 FAT Response status:', response.status);
-            
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('❌ FAT Error response:', text);
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                });
-            }
-            
-            return response.json();
-        })
-        .then(data => {
-            console.log('✅ FAT Data:', data);
-            
-            if (data.success && data.kode_fat) {
-                kodeFatInput.value = data.kode_fat;
-                kodeFatInput.classList.add('fat-updated');
-                showNotification(`✅ Kode FAT: ${data.kode_fat}`, 'success');
-                
-                setTimeout(() => {
-                    kodeFatInput.classList.remove('fat-updated');
-                }, 1200);
-            } else {
-                console.warn('⚠️ FAT generation failed:', data.error);
-                showNotification('⚠️ Gagal generate kode FAT: ' + (data.error || 'Unknown error'), 'error');
-            }
-        })
-        .catch(error => {
-            console.error('❌ FAT Error:', error);
-            showNotification('❌ Gagal generate kode FAT: ' + error.message, 'error');
-        });
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    console.warn('⚠️ Fetch FAT dari server gagal, menggunakan lokal');
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success && data.kode_fat) {
+                    console.log('✅ FAT dari server:', data.kode_fat);
+                    kodeFatInput.value = data.kode_fat;
+                    kodeFatInput.classList.add('fat-updated');
+                    setTimeout(() => {
+                        kodeFatInput.classList.remove('fat-updated');
+                    }, 1200);
+                }
+            })
+            .catch(error => {
+                console.warn('⚠️ Error fetching FAT dari server:', error);
+                // Tetap gunakan kode FAT lokal yang sudah di-generate
+            });
     }
-});
 
-    // Load old values
+    // AUTO-LOAD untuk old values
     const oldProvinsi = provinsiSelect.value;
-    const oldKabupaten = '{{ old("kabupaten") }}';
-    const oldKecamatan = '{{ old("kecamatan") }}';
+    const oldKabupaten = "{{ old('kabupaten') }}";
+    const oldKecamatan = "{{ old('kecamatan') }}";
 
     if (oldProvinsi) {
+        console.log('🔄 Auto-loading old values...');
         provinsiSelect.dispatchEvent(new Event('change'));
+        
         setTimeout(() => {
             if (oldKabupaten) {
                 kabupatenSelect.value = oldKabupaten;
                 kabupatenSelect.dispatchEvent(new Event('change'));
+                
                 setTimeout(() => {
                     if (oldKecamatan) {
                         kecamatanSelect.value = oldKecamatan;
                         kecamatanSelect.dispatchEvent(new Event('change'));
                     }
-                }, 1000);
+                }, 500);
             }
-        }, 1000);
+        }, 500);
     }
-});
 
-// MAP INITIALIZATION
-async function initializeMap() {
-    if (mapInitialized) return;
-    try {
-        await new Promise((resolve) => {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            script.onload = resolve;
-            document.head.appendChild(script);
-        });
-
-        const defaultLocation = regions.bali.center;
-        customerMap = L.map('map').setView(defaultLocation, regions.bali.zoom);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(customerMap);
-
-        const customIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: '<div style="background: linear-gradient(45deg, #007bff, #0056b3); width: 24px; height: 24px; border-radius: 50% 50% 50% 0; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.4); transform: rotate(-45deg);"></div>',
-            iconSize: [24, 24],
-            iconAnchor: [12, 24]
-        });
-
-        customerMarker = L.marker(defaultLocation, { draggable: true, icon: customIcon }).addTo(customerMap);
-
-        customerMarker.on('dragend', function(e) {
-            const pos = e.target.getLatLng();
-            updateCoordinates(pos.lat, pos.lng);
-        });
-
-        customerMap.on('click', function(e) {
-            customerMarker.setLatLng(e.latlng);
-            updateCoordinates(e.latlng.lat, e.latlng.lng);
-        });
-
-        updateCoordinates(defaultLocation[0], defaultLocation[1]);
-        mapInitialized = true;
-    } catch (error) {
-        console.error('Map error:', error);
-    }
-}
-
-function updateCoordinates(lat, lng) {
-    document.getElementById('latitude').value = lat.toFixed(6);
-    document.getElementById('longitude').value = lng.toFixed(6);
-    document.getElementById('display-lat').textContent = lat.toFixed(6);
-    document.getElementById('display-lng').textContent = lng.toFixed(6);
-}
-
-function focusRegion(regionKey) {
-    if (!customerMap || !mapInitialized) return;
-    const region = regions[regionKey];
-    if (region) {
-        customerMap.flyTo(region.center, region.zoom);
-        setTimeout(() => {
-            customerMarker.setLatLng(region.center);
-            updateCoordinates(region.center[0], region.center[1]);
-        }, 1000);
-    }
-}
-
-function showNotification(message, type = 'info') {
-    const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
-    const notification = document.createElement('div');
-    notification.className = `alert ${alertClass} position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
-    notification.innerHTML = `${message} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-// Initialize map on load
-window.addEventListener('load', () => setTimeout(initializeMap, 500));
-
-// DELETE AJAX
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.delete-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!confirm('Yakin ingin menghapus?')) return;
-
-            fetch(this.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: new FormData(this)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    });
+    console.log('✅ Script cascade dropdown selesai dimuat');
 });
 </script>
 @endsection
