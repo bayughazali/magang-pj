@@ -6,22 +6,42 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('competitors', function (Blueprint $table) {
             $table->id();
-            $table->string('cluster');                // cluster competitor
-            $table->string('competitor_name');        // nama competitor
-            $table->string('paket')->nullable();      // nama paket
-            $table->string('kecepatan')->nullable();  // kecepatan paket
-            $table->string('kuota')->nullable();      // kuota
-            $table->decimal('harga', 15, 2);          // harga paket
-            $table->string('fitur_tambahan')->nullable(); // fitur tambahan
-            $table->text('keterangan')->nullable();   // keterangan lain
+            
+            // ✅ Foreign Key ke users table
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            
+            // ✅ Data Sales
+            $table->string('sales_name');
+            
+            // ✅ Data Competitor
+            $table->string('cluster');
+            $table->string('competitor_name');
+            $table->string('paket')->nullable();
+            $table->string('kecepatan')->nullable();
+            $table->string('kuota')->nullable();
+            $table->decimal('harga', 15, 2)->default(0);
+            $table->string('fitur_tambahan')->nullable();
+            $table->text('keterangan')->nullable();
+            
             $table->timestamps();
+            
+            // ✅ Index untuk performa query
+            $table->index('user_id');
+            $table->index('cluster');
+            $table->index('sales_name');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('competitors');

@@ -43,7 +43,7 @@ class Pelanggan extends Model
     }
 
     /**
-     * ✅ METHOD UNTUK TREN BULANAN 12 BULAN
+     * ✅ METHOD UNTUK TREN BULANAN 12 BULAN (FIXED)
      * Menghitung jumlah pelanggan baru per bulan dalam 12 bulan terakhir
      */
     public static function trenBulanan12Bulan()
@@ -80,8 +80,11 @@ class Pelanggan extends Model
                          ->where('bulan', $bulan)
                          ->first();
             
+            // ✅ FIX: Ubah key 'bulan' menjadi 'label'
             $result[] = [
-                'bulan' => $months[$bulan] . ' ' . $tahun,
+                'label' => $months[$bulan] . ' ' . $tahun,  // ✅ Key 'label' untuk DashboardController
+                'bulan' => $bulan,                          // Tetap simpan untuk reference
+                'tahun' => $tahun,                          // Tetap simpan untuk reference
                 'jumlah' => $found ? $found->jumlah : 0
             ];
         }

@@ -24,6 +24,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Route untuk get competitor details (AJAX)
+Route::get('/dashboard/competitor-details', [DashboardController::class, 'getCompetitorDetails'])
+    ->name('dashboard.competitor.details')
+    ->middleware('auth');
+
 // ================== AUTH ROUTES (PUBLIC) ================== //
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
