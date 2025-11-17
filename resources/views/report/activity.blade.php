@@ -162,7 +162,11 @@
 
                                     @if(auth()->user()->role === 'admin')
                                         <td>
-                                            <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $report->id }}">
+                                            {{-- <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $report->id }}"> --}}
+                                                <button type="button" 
+                                                class="btn btn-warning btn-sm mb-1" 
+                                                data-toggle="modal" 
+                                                data-target="#editModal{{ $report->id }}">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
                                             <form action="{{ route('reports.destroy', $report->id) }}" method="POST" class="d-inline">
@@ -186,7 +190,10 @@
                                                     @method('PUT')
                                                     <div class="modal-header">
                                                         <h5 class="modal-title">Edit Report - {{ $report->sales }}</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        {{-- <button type="button" class="btn-close" data-bs-dismiss="modal"></button> --}}
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+</button>
                                                     </div>
                                                     <div class="modal-body">
                                                         <div class="row">
@@ -256,7 +263,8 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="submit" class="btn btn-success">Update</button>
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                        {{-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button> --}}
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -283,12 +291,21 @@
 </div>
 
 {{-- Modal untuk melihat gambar --}}
-<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+{{-- <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Evidence Photo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button> --}}
+                <div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Evidence Photo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                
             </div>
             <div class="modal-body text-center">
                 <img id="modalImage" src="" class="img-fluid rounded">

@@ -123,7 +123,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/report-activity/export-pdf', [ReportActivityController::class, 'exportPdf'])->name('report.activity.pdf');
 
         // Report Competitor (view saja) - menggunakan ReportController
-        Route::get('/competitor', [ReportController::class, 'competitor'])->name('competitor');
+        // Route::get('/competitor', [ReportController::class, 'competitor'])->name('competitor');
+
+        // ✅ BENAR - Menggunakan CompetitorController
+        Route::get('/competitor', [CompetitorController::class, 'index'])->name('competitor');
 
         // Other report routes
         Route::get('/export/pdf', [ReportController::class, 'exportPdf'])->name('export.pdf');
@@ -137,7 +140,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('competitor', CompetitorController::class);
 
     // ================== OPERATIONAL REPORT ROUTES ================== //
-   Route::prefix('report/operational')->name('report.operational.')->group(function () {
+    Route::prefix('report/operational')->name('report.operational.')->group(function () {
     Route::get('/', [OperationalReportController::class, 'index'])->name('index');
     Route::post('/', [OperationalReportController::class, 'store'])->name('store');
     Route::get('/show', [OperationalReportController::class, 'show'])->name('show');
@@ -148,16 +151,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/get-kabupaten', [OperationalReportController::class, 'getKabupaten'])->name('get-kabupaten');
     Route::get('/get-kecamatan', [OperationalReportController::class, 'getKecamatan'])->name('get-kecamatan'); // ✅ Tambahkan ini
     Route::get('/get-kode-fat', [OperationalReportController::class, 'getKodeFat'])->name('get-kode-fat');
-});
+    });
 
     // ================== CUSTOMER ROUTES ================== //
-
-
-    Route::get('/report/customer/search', [App\Http\Controllers\CustomerSearchController::class, 'index'])
+     Route::get('/report/customer/search', [App\Http\Controllers\CustomerSearchController::class, 'index'])
     ->name('report.customer.search');
-
-
     Route::prefix('customer')->name('customer.')->group(function () {
+        
         // Search customer routes
         Route::get('/search', [CustomerSearchController::class, 'index'])->name('search');
         Route::get('/{id}/edit', [CustomerSearchController::class, 'edit'])->name('edit');
@@ -226,9 +226,6 @@ Route::resource('admins', AdminController::class);
 Route::fallback(function () {
     return redirect()->route('login');
 });
-
-
-
 
 Route::prefix('export')->group(function () {
     // Activity

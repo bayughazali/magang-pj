@@ -18,6 +18,7 @@
   <!-- Argon CSS -->
   <link rel="stylesheet" href="{{ asset('/') }}argonpro/assets/css/argon.css?v=1.1.0" type="text/css">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  @stack('styles')
 </head>
 
 <body>
@@ -49,6 +50,7 @@
   <script src="{{ asset('/') }}argonpro/assets/js/argon.js?v=1.1.0"></script>
   <!-- Demo JS - remove this in your project -->
   <script src="{{ asset('/') }}argonpro/assets/js/demo.min.js"></script>
+  @stack('scripts')
 </body>
 
 </html>

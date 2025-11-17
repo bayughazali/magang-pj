@@ -148,9 +148,23 @@ class OperationalReportController extends Controller
         return $result;
     }
 
+    // ============================================================================
+    // ✅ PERUBAHAN UTAMA: Filter data berdasarkan role user
+    // ============================================================================
     public function index()
     {
-        $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
+        $user = Auth::user();
+        
+        // ✅ Jika admin, tampilkan semua data
+        // ✅ Jika bukan admin, hanya tampilkan data milik user tersebut
+        if ($user->role === 'admin') {
+            $pelanggans = Pelanggan::orderBy('created_at', 'desc')->get();
+        } else {
+            $pelanggans = Pelanggan::where('user_id', $user->id)
+                                  ->orderBy('created_at', 'desc')
+                                  ->get();
+        }
+        
         $pakets = Competitor::select('paket')->distinct()->get();
         $regionData = $this->getRegionData();
         $nextId = $this->generateNextCustomerId();
@@ -252,142 +266,154 @@ class OperationalReportController extends Controller
     }
 
     public function getKodeFat(Request $request)
-{
-    try {
-        $provinsi = $request->input('provinsi');
-        $kabupaten = $request->input('kabupaten');
-        $kecamatan = $request->input('kecamatan');
+    {
+        try {
+            $provinsi = $request->input('provinsi');
+            $kabupaten = $request->input('kabupaten');
+            $kecamatan = $request->input('kecamatan');
 
-        Log::info('Get Kode FAT Request:', [
-            'provinsi' => $provinsi,
-            'kabupaten' => $kabupaten,
-            'kecamatan' => $kecamatan
-        ]);
+            Log::info('Get Kode FAT Request:', [
+                'provinsi' => $provinsi,
+                'kabupaten' => $kabupaten,
+                'kecamatan' => $kecamatan
+            ]);
 
-        if (empty($provinsi) || empty($kabupaten)) {
+            if (empty($provinsi) || empty($kabupaten)) {
+                return response()->json([
+                    'success' => false,
+                    'kode_fat' => '',
+                    'error' => 'Provinsi dan kabupaten harus dipilih'
+                ], 400);
+            }
+
+            $regionData = $this->getRegionDataWithKecamatan();
+
+            if (isset($regionData[$provinsi][$kabupaten])) {
+                $baseFat = $regionData[$provinsi][$kabupaten]['kode_fat'];
+                
+                // Query untuk menghitung jumlah pelanggan
+                $query = Pelanggan::where('provinsi', $provinsi)
+                                 ->where('kabupaten', $kabupaten);
+                
+                if (!empty($kecamatan)) {
+                    // Jika kecamatan dipilih, tambahkan ke filter
+                    $query->where('kecamatan', $kecamatan);
+                    $count = $query->count();
+                    
+                    // Ambil 3 karakter pertama dari kecamatan dan uppercase
+                    $kecamatanCode = strtoupper(substr($kecamatan, 0, 3));
+                    
+                    // Format: FAT-XXX-YYY-001
+                    $kodeFat = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
+                } else {
+                    // Jika kecamatan tidak dipilih
+                    $count = $query->count();
+                    $kodeFat = sprintf("%s-%03d", $baseFat, $count + 1);
+                }
+
+                Log::info('Kode FAT Generated:', [
+                    'kode_fat' => $kodeFat,
+                    'count' => $count
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'kode_fat' => $kodeFat
+                ]);
+            }
+
             return response()->json([
                 'success' => false,
                 'kode_fat' => '',
-                'error' => 'Provinsi dan kabupaten harus dipilih'
-            ], 400);
-        }
+                'error' => 'Data provinsi/kabupaten tidak ditemukan'
+            ], 404);
 
-        $regionData = $this->getRegionDataWithKecamatan();
-
-        if (isset($regionData[$provinsi][$kabupaten])) {
-            $baseFat = $regionData[$provinsi][$kabupaten]['kode_fat'];
-            
-            // Query untuk menghitung jumlah pelanggan
-            $query = Pelanggan::where('provinsi', $provinsi)
-                             ->where('kabupaten', $kabupaten);
-            
-            if (!empty($kecamatan)) {
-                // Jika kecamatan dipilih, tambahkan ke filter
-                $query->where('kecamatan', $kecamatan);
-                $count = $query->count();
-                
-                // Ambil 3 karakter pertama dari kecamatan dan uppercase
-                $kecamatanCode = strtoupper(substr($kecamatan, 0, 3));
-                
-                // Format: FAT-XXX-YYY-001
-                $kodeFat = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
-            } else {
-                // Jika kecamatan tidak dipilih
-                $count = $query->count();
-                $kodeFat = sprintf("%s-%03d", $baseFat, $count + 1);
-            }
-
-            Log::info('Kode FAT Generated:', [
-                'kode_fat' => $kodeFat,
-                'count' => $count
+        } catch (\Exception $e) {
+            Log::error('Get Kode FAT Error:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-
+            
             return response()->json([
-                'success' => true,
-                'kode_fat' => $kodeFat
-            ]);
+                'success' => false,
+                'kode_fat' => '',
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => false,
-            'kode_fat' => '',
-            'error' => 'Data provinsi/kabupaten tidak ditemukan'
-        ], 404);
-
-    } catch (\Exception $e) {
-        Log::error('Get Kode FAT Error:', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'kode_fat' => '',
-            'error' => 'Terjadi kesalahan: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'nama_pelanggan' => 'required|string|max:255',
-        'bandwidth'      => 'required|string|max:100',
-        'alamat'         => 'required|string',
-        'provinsi'       => 'required|string|max:100',
-        'kabupaten'      => 'required|string|max:100',
-        'kecamatan'      => 'required|string|max:100',
-        'latitude'       => 'nullable|numeric|between:-90,90',
-        'longitude'      => 'nullable|numeric|between:-180,180',
-        'nomor_telepon'  => 'required|string|max:50',
-        'kode_fat'       => 'nullable|string|max:100',
-    ]);
+    {
+        $validated = $request->validate([
+            'nama_pelanggan' => 'required|string|max:255',
+            'bandwidth'      => 'required|string|max:100',
+            'alamat'         => 'required|string',
+            'provinsi'       => 'required|string|max:100',
+            'kabupaten'      => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
+            'latitude'       => 'nullable|numeric|between:-90,90',
+            'longitude'      => 'nullable|numeric|between:-180,180',
+            'nomor_telepon'  => 'required|string|max:50',
+            'kode_fat'       => 'nullable|string|max:100',
+        ]);
 
-    // ✅ PAKSA sales_name dan user_id dari user yang login (KEAMANAN)
-    $validated['sales_name'] = Auth::user()->name;
-    $validated['user_id'] = Auth::id();
-    $validated['id_pelanggan'] = $this->generateNextCustomerId();
-    $validated['kecepatan'] = [$validated['bandwidth']];
+        // ✅ PAKSA sales_name dan user_id dari user yang login (KEAMANAN)
+        $validated['sales_name'] = Auth::user()->name;
+        $validated['user_id'] = Auth::id();
+        $validated['id_pelanggan'] = $this->generateNextCustomerId();
+        $validated['kecepatan'] = [$validated['bandwidth']];
 
-    // Generate kode FAT otomatis jika kosong
-    if (empty($validated['kode_fat'])) {
-        $regionData = $this->getRegionDataWithKecamatan();
-        if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
-            $baseFat = $regionData[$validated['provinsi']][$validated['kabupaten']]['kode_fat'];
-            
-            $query = Pelanggan::where('provinsi', $validated['provinsi'])
-                             ->where('kabupaten', $validated['kabupaten']);
-            
-            if (!empty($validated['kecamatan'])) {
-                $query->where('kecamatan', $validated['kecamatan']);
-                $count = $query->count();
-                $kecamatanCode = strtoupper(substr($validated['kecamatan'], 0, 3));
-                $validated['kode_fat'] = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
-            } else {
-                $count = $query->count();
-                $validated['kode_fat'] = sprintf("%s-%03d", $baseFat, $count + 1);
+        // Generate kode FAT otomatis jika kosong
+        if (empty($validated['kode_fat'])) {
+            $regionData = $this->getRegionDataWithKecamatan();
+            if (isset($regionData[$validated['provinsi']][$validated['kabupaten']])) {
+                $baseFat = $regionData[$validated['provinsi']][$validated['kabupaten']]['kode_fat'];
+                
+                $query = Pelanggan::where('provinsi', $validated['provinsi'])
+                                 ->where('kabupaten', $validated['kabupaten']);
+                
+                if (!empty($validated['kecamatan'])) {
+                    $query->where('kecamatan', $validated['kecamatan']);
+                    $count = $query->count();
+                    $kecamatanCode = strtoupper(substr($validated['kecamatan'], 0, 3));
+                    $validated['kode_fat'] = sprintf("%s-%s-%03d", $baseFat, $kecamatanCode, $count + 1);
+                } else {
+                    $count = $query->count();
+                    $validated['kode_fat'] = sprintf("%s-%03d", $baseFat, $count + 1);
+                }
             }
+        }
+
+        try {
+            Pelanggan::create($validated);
+            return redirect()->route('report.operational.index')
+                ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan! Kode FAT: {$validated['kode_fat']} | Sales: {$validated['sales_name']}");
+        } catch (\Exception $e) {
+            Log::error('Store Pelanggan Error:', [
+                'error' => $e->getMessage(),
+                'data' => $validated
+            ]);
+            return back()->withInput()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }
 
-    try {
-        Pelanggan::create($validated);
-        return redirect()->route('report.operational.index')
-            ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil disimpan! Kode FAT: {$validated['kode_fat']} | Sales: {$validated['sales_name']}");
-    } catch (\Exception $e) {
-        Log::error('Store Pelanggan Error:', [
-            'error' => $e->getMessage(),
-            'data' => $validated
-        ]);
-        return back()->withInput()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-    }
-}
+    // ============================================================================
+    // ✅ PERUBAHAN: Edit hanya untuk data milik user sendiri (kecuali admin)
+    // ============================================================================
     public function edit($id)
     {
         try {
+            $user = Auth::user();
             $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
+            
+            // ✅ Cek apakah user berhak mengedit data ini
+            if ($user->role !== 'admin' && $pelanggan->user_id !== $user->id) {
+                return redirect()
+                    ->route('report.operational.index')
+                    ->withErrors(['error' => '⛔ Anda tidak memiliki akses untuk mengedit data ini.']);
+            }
+            
             $regionData = $this->getRegionData();
-
             return view('report.operational.edit', compact('pelanggan', 'regionData'));
 
         } catch (\Exception $e) {
@@ -398,85 +424,113 @@ class OperationalReportController extends Controller
         }
     }
 
+    // ============================================================================
+    // ✅ PERUBAHAN: Update hanya untuk data milik user sendiri (kecuali admin)
+    // ============================================================================
     public function update(Request $request, $id)
-{
-    $validated = $request->validate([
-        'id_pelanggan'   => [
-            'required',
-            'string',
-            'max:100',
-            \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
-        ],
-        'nama_pelanggan' => 'required|string|max:255',
-        'bandwidth'      => 'required|string|max:100',
-        'nomor_telepon'  => 'required|string|max:50',
-        'provinsi'       => 'required|string|max:100',
-        'kabupaten'      => 'required|string|max:100',
-        'kecamatan'      => 'required|string|max:100',
-        'kode_fat'       => 'nullable|string|max:100',
-        'alamat'         => 'required|string',
-        'latitude'       => 'nullable|numeric|between:-90,90',
-        'longitude'      => 'nullable|numeric|between:-180,180',
-    ]);
+    {
+        $validated = $request->validate([
+            'id_pelanggan'   => [
+                'required',
+                'string',
+                'max:100',
+                \Illuminate\Validation\Rule::unique('pelanggans', 'id_pelanggan')->ignore($id, 'id_pelanggan')
+            ],
+            'nama_pelanggan' => 'required|string|max:255',
+            'bandwidth'      => 'required|string|max:100',
+            'nomor_telepon'  => 'required|string|max:50',
+            'provinsi'       => 'required|string|max:100',
+            'kabupaten'      => 'required|string|max:100',
+            'kecamatan'      => 'required|string|max:100',
+            'kode_fat'       => 'nullable|string|max:100',
+            'alamat'         => 'required|string',
+            'latitude'       => 'nullable|numeric|between:-90,90',
+            'longitude'      => 'nullable|numeric|between:-180,180',
+        ]);
 
-    try {
-        $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
-
-        // ✅ HANYA ADMIN yang bisa ubah sales_name
-        if (Auth::user()->role === 'admin' && $request->has('sales_name')) {
-            $validated['sales_name'] = $request->sales_name;
-        } else {
-            // User biasa tidak bisa ubah sales_name
-            $validated['sales_name'] = $pelanggan->sales_name;
-            $validated['user_id'] = $pelanggan->user_id;
-        }
-
-        if ($validated['id_pelanggan'] !== $id) {
-            $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
-            if ($exists) {
+        try {
+            $user = Auth::user();
+            $pelanggan = Pelanggan::where('id_pelanggan', $id)->firstOrFail();
+            
+            // ✅ Cek apakah user berhak mengupdate data ini
+            if ($user->role !== 'admin' && $pelanggan->user_id !== $user->id) {
                 return redirect()
-                    ->back()
-                    ->withInput()
-                    ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
+                    ->route('report.operational.index')
+                    ->withErrors(['error' => '⛔ Anda tidak memiliki akses untuk mengubah data ini.']);
             }
 
-            DB::transaction(function () use ($pelanggan, $validated) {
-                $oldId = $pelanggan->id_pelanggan;
-                $pelanggan->delete();
-                Pelanggan::create($validated);
-                Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
-            });
-        } else {
-            $pelanggan->update($validated);
+            // ✅ HANYA ADMIN yang bisa ubah sales_name
+            if ($user->role === 'admin' && $request->has('sales_name')) {
+                $validated['sales_name'] = $request->sales_name;
+            } else {
+                // User biasa tidak bisa ubah sales_name
+                $validated['sales_name'] = $pelanggan->sales_name;
+                $validated['user_id'] = $pelanggan->user_id;
+            }
+
+            if ($validated['id_pelanggan'] !== $id) {
+                $exists = Pelanggan::where('id_pelanggan', $validated['id_pelanggan'])->exists();
+                if ($exists) {
+                    return redirect()
+                        ->back()
+                        ->withInput()
+                        ->withErrors(['id_pelanggan' => 'ID Pelanggan sudah digunakan']);
+                }
+
+                DB::transaction(function () use ($pelanggan, $validated) {
+                    $oldId = $pelanggan->id_pelanggan;
+                    $pelanggan->delete();
+                    Pelanggan::create($validated);
+                    Log::info("ID Pelanggan berhasil diubah dari {$oldId} ke {$validated['id_pelanggan']}");
+                });
+            } else {
+                $pelanggan->update($validated);
+            }
+
+            return redirect()
+                ->route('report.operational.index')
+                ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
+
+        } catch (\Exception $e) {
+            Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
-
-        return redirect()
-            ->route('report.operational.index')
-            ->with('success', "✅ Data pelanggan {$validated['nama_pelanggan']} berhasil diperbarui!");
-
-    } catch (\Exception $e) {
-        Log::error("Gagal mengupdate pelanggan ID {$id}: " . $e->getMessage());
-        return redirect()
-            ->back()
-            ->withInput()
-            ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
-}
+
+    // ============================================================================
+    // ✅ PERUBAHAN: Hapus hanya untuk data milik user sendiri (kecuali admin)
+    // ============================================================================
     public function destroy($pelanggan)
     {
         try {
+            $user = Auth::user();
             $pelangganData = Pelanggan::findOrFail($pelanggan);
+            
+            // ✅ Cek apakah user berhak menghapus data ini
+            if ($user->role !== 'admin' && $pelangganData->user_id !== $user->id) {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => '⛔ Anda tidak memiliki akses untuk menghapus data ini.'
+                    ], 403);
+                }
+                return back()->withErrors(['error' => '⛔ Anda tidak memiliki akses untuk menghapus data ini.']);
+            }
+            
             $nama = $pelangganData->nama_pelanggan;
             $pelangganData->delete();
             
             if (request()->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => "Data pelanggan {$nama} berhasil dihapus!"
+                    'message' => "✅ Data pelanggan {$nama} berhasil dihapus!"
                 ]);
             }
             
-            return back()->with('success', "Data pelanggan {$nama} berhasil dihapus!");
+            return back()->with('success', "✅ Data pelanggan {$nama} berhasil dihapus!");
         } catch (\Exception $e) {
             if (request()->ajax()) {
                 return response()->json([

@@ -6,7 +6,8 @@ use App\Models\ReportActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
-use Barryvdh\DomPDF\Facade\Pdf; // Import ini
+use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportActivityController extends Controller
 {
@@ -74,13 +75,34 @@ class ReportActivityController extends Controller
         return view('report.activity', compact('competitors'));
     }
 
+    /**
+     * ✅ INDEX - Tampilkan data sesuai role
+     * Admin: Lihat semua data
+     * User: Lihat data sendiri saja
+     */
     public function index()
     {
-        $reports = ReportActivity::latest()->get();
+        $currentUser = Auth::user();
+        
+        // ✅ Filter berdasarkan role
+        if ($currentUser->role === 'admin') {
+            // Admin lihat semua data, urutkan terbaru
+            $reports = ReportActivity::latest()->get();
+        } else {
+            // User biasa hanya lihat data sendiri
+            $reports = ReportActivity::where('sales', $currentUser->name)
+                ->latest()
+                ->get();
+        }
+        
         $competitors = $this->getLokasiData();
+        
         return view('report.activity', compact('reports', 'competitors'));
     }
 
+    /**
+     * ✅ STORE - Simpan data dengan nama sales otomatis
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -92,6 +114,15 @@ class ReportActivityController extends Controller
             'hasil_kendala' => 'nullable|string',
             'status' => 'required|in:selesai,proses'
         ]);
+
+        // ✅ Validasi: Pastikan sales sesuai dengan user yang login (kecuali admin)
+        if (Auth::user()->role !== 'admin') {
+            if ($validated['sales'] !== Auth::user()->name) {
+                return redirect()->back()
+                    ->with('error', 'Anda tidak dapat membuat report atas nama orang lain!')
+                    ->withInput();
+            }
+        }
 
         if ($request->hasFile('evidence')) {
             try {
@@ -120,6 +151,9 @@ class ReportActivityController extends Controller
         }
     }
 
+    /**
+     * ✅ UPDATE - User hanya bisa edit data sendiri, Admin bisa edit semua
+     */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -133,6 +167,21 @@ class ReportActivityController extends Controller
         ]);
 
         $report = ReportActivity::findOrFail($id);
+
+        // ✅ Validasi akses: User hanya bisa edit data sendiri
+        if (Auth::user()->role !== 'admin') {
+            if ($report->sales !== Auth::user()->name) {
+                return redirect()->back()
+                    ->with('error', 'Anda tidak memiliki akses untuk mengedit data ini!');
+            }
+            
+            // User tidak boleh mengubah nama sales
+            if ($validated['sales'] !== Auth::user()->name) {
+                return redirect()->back()
+                    ->with('error', 'Anda tidak dapat mengubah nama sales!')
+                    ->withInput();
+            }
+        }
 
         if ($request->hasFile('evidence')) {
             try {
@@ -164,10 +213,22 @@ class ReportActivityController extends Controller
         }
     }
 
+    /**
+     * ✅ DESTROY - User hanya bisa hapus data sendiri, Admin bisa hapus semua
+     */
     public function destroy($id)
     {
         try {
             $report = ReportActivity::findOrFail($id);
+            
+            // ✅ Validasi akses: User hanya bisa hapus data sendiri
+            if (Auth::user()->role !== 'admin') {
+                if ($report->sales !== Auth::user()->name) {
+                    return redirect()->back()
+                        ->with('error', 'Anda tidak memiliki akses untuk menghapus data ini!');
+                }
+            }
+            
             if ($report->evidence) {
                 Storage::disk('public')->delete($report->evidence);
             }
@@ -178,17 +239,34 @@ class ReportActivityController extends Controller
         }
     }
 
+    /**
+     * ✅ EXPORT PDF - Admin lihat semua, User lihat sendiri
+     */
     public function exportPdf()
     {
         try {
-            $reports = ReportActivity::orderBy('tanggal', 'desc')->get();
+            $currentUser = Auth::user();
+            
+            // ✅ Filter berdasarkan role
+            if ($currentUser->role === 'admin') {
+                $reports = ReportActivity::orderBy('tanggal', 'desc')->get();
+                $title = 'Laporan Aktivitas Sales - Semua User';
+            } else {
+                $reports = ReportActivity::where('sales', $currentUser->name)
+                    ->orderBy('tanggal', 'desc')
+                    ->get();
+                $title = 'Laporan Aktivitas Sales - ' . $currentUser->name;
+            }
+            
             $data = [
                 'reports' => $reports,
-                'title'   => 'Laporan Aktivitas Sales',
+                'title'   => $title,
                 'date'    => date('d F Y')
             ];
+            
             $pdf = Pdf::setOptions(['isRemoteEnabled' => true])
-                ->loadView('report.activity-pdf', compact('reports'));
+                ->loadView('report.activity-pdf', compact('reports', 'title'));
+            
             return $pdf->download('laporan-aktivitas-sales-' . date('Y-m-d') . '.pdf');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengekspor PDF: ' . $e->getMessage());

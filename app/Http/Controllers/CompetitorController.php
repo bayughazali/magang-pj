@@ -8,25 +8,26 @@ use App\Exports\CompetitorExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Auth;
 
-
 class CompetitorController extends Controller
 {
-    // READ (Index)
+    // READ (Index) - ✅ DIPERBAIKI: User hanya lihat data sendiri dari awal
     public function index(Request $request)
     {
         $query = Competitor::query();
+
+        // ✅ FILTER BERDASARKAN ROLE USER (DITERAPKAN DI AWAL)
+        if (Auth::user()->role !== 'admin') {
+            // User biasa HANYA melihat data mereka sendiri
+            $query->where('user_id', Auth::id());
+        }
+        // Admin dapat melihat SEMUA data
 
         // Filter by cluster if provided
         if ($request->filled('cluster')) {
             $query->where('cluster', $request->cluster);
         }
 
-        // Filter by sales (untuk admin bisa lihat semua, user biasa hanya datanya sendiri)
-        if (Auth::user()->role !== 'admin') {
-            $query->where('user_id', Auth::id());
-        }
-
-        // Pagination dengan join ke tabel users untuk menampilkan nama sales
+        // Pagination dengan eager loading untuk menampilkan nama sales
         $competitors = $query->with('user')->latest()->paginate(10);
 
         return view('report.competitor', compact('competitors'));
@@ -48,7 +49,7 @@ class CompetitorController extends Controller
             'keterangan'       => 'nullable|array',
         ]);
 
-        // PAKSA sales_name dan user_id dari user yang login (KEAMANAN)
+        // ✅ PAKSA sales_name dan user_id dari user yang login (KEAMANAN)
         $salesName = Auth::user()->name;
         $userId = Auth::id();
 
@@ -159,7 +160,7 @@ class CompetitorController extends Controller
     {
         $cluster = $request->get('cluster');
         
-        // Filter berdasarkan role
+        // ✅ Filter berdasarkan role - User hanya export data sendiri
         if (Auth::user()->role !== 'admin') {
             return Excel::download(
                 new CompetitorExport($cluster, Auth::id()), 
@@ -167,6 +168,7 @@ class CompetitorController extends Controller
             );
         }
 
+        // Admin export semua data
         return Excel::download(
             new CompetitorExport($cluster), 
             'competitor-data-' . date('Y-m-d') . '.xlsx'
